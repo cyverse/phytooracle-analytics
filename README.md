@@ -8,12 +8,12 @@ By integrating visualization dashboards and advanced searching and indexing capa
 
 ## Components
 
-1. `automation`: Contains scripts for automating repetitive tasks such as data preparation, uploading and indexing workflows.
+1. [automation](automation): Contains scripts for automating repetitive tasks such as data preparation, uploading and indexing workflows.
 
-1. `data_preparation`: Contains scripts for preparing the data in JSON format to be indexed. This includes data extraction, transformation, and cleaning processes.
+1. [data_preparation](data_preparation): Contains scripts for preparing the data in JSON format to be indexed. This includes data extraction, transformation, and cleaning processes.
 
-1. `deployment`: Contains scripts for deploying the solution.
+1. [deployment](deployment): Contains scripts for deploying the solution.
 
-1. `sample_queries`: Contains predefined queries in Query DSL format used to extract relevant responses from the indexed data.
+1. [sample_queries](sample_queries): Contains predefined queries in Query DSL format used to extract relevant responses from the indexed data.
 
-1. `search_configuration`: Contains scripts to interact with the OpenSearch Server.
+1. [search_configuration](search_configuration): Contains scripts to interact with the OpenSearch Server.
