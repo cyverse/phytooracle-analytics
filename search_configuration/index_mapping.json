@@ -1,0 +1,55 @@
+{
+  "mappings": {
+    "properties": {
+      "plant_name": {
+        "type": "text"
+      },
+      "genotype": {
+        "type": "keyword"
+      },
+      "season": {
+        "type": "integer"
+      },
+      "crop_type": {
+        "type": "keyword"
+      },
+      "year_of_planting": {
+        "type": "integer"
+      },
+      "level": {
+        "type": "integer"
+      },
+      "instrument": {
+        "type": "keyword"
+      },
+      "scan_date": {
+        "type": "date",
+        "format": "basic_date_time"
+      },
+      "field": {
+        "type": "keyword"
+      },
+      "experiment": {
+        "type": "keyword"
+      },
+      "treat": {
+        "type": "keyword"
+      },
+      "rep": {
+        "type": "keyword"
+      },
+      "range": {
+        "type": "integer"
+      },
+      "column": {
+        "type": "integer"
+      },
+      "plot": {
+        "type": "integer"
+      },
+      "id": {
+        "type": "keyword"
+      }
+    }
+  }
+}
