@@ -17,3 +17,17 @@ By integrating visualization dashboards and advanced searching and indexing capa
 1. [sample_queries](sample_queries): Contains predefined queries in Query DSL format used to extract relevant responses from the indexed data.
 
 1. [search_configuration](search_configuration): Contains scripts to interact with the OpenSearch Server.
+
+
+## USAGE
+- **Coming soon**
+
+## NOTE
+
+- Please use `requirements_temp.txt` for now.
+
+
+## TODO
+
+- `data_preparation/data_preparation.py`: Remove `Pandas` dependency - should be doable with simple csv_reader. 
+- Remove `myenv` from `.gitignore` - too specific for one user (Tanmay Agrawal)
