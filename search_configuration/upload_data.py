@@ -1,9 +1,20 @@
 """
 A sample file to upload data to index
 """
+import os
+import sys
+
+# Add the parent directory to the path to import the environment variables
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+
+from dotenv import load_dotenv
+
+load_dotenv()
+
 from opensearchpy import OpenSearch, helpers
 import json
-paths = ["output/combined_plants_info_2023-01-23__18-26-23-632.json"]  # Dummy
+
+paths = ["output/combined_plants_info_20200123T000000.000-0700.json"]  # Dummy
 for data_path in paths:
     with open(data_path, 'r') as file:
         data = json.load(file)
@@ -19,9 +30,9 @@ for data_path in paths:
     with open('actions.json', 'w') as file:
         json.dump(actions, file, indent=4)
 
-    host = 'localhost'
-    port = 9200
-    auth = ('admin', 'admin') # For testing only.
+    host = os.getenv("ELASTIC_HOST") 
+    port = os.getenv("ELASTIC_PORT")
+    auth = (os.getenv("ELASTIC_USER"), os.getenv("ELASTIC_PASSWORD"))
 
     # Create the client with SSL/TLS and hostname verification disabled.
     client = OpenSearch(

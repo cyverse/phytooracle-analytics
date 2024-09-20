@@ -1,2 +1,6 @@
 .venv
 .vscode
+.env*
+output/*
+actions.json
+myenv

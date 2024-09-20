@@ -2,11 +2,16 @@ certifi==2024.2.2
 charset-normalizer==3.3.2
 defusedxml==0.7.1
 idna==3.7
+numpy==2.1.1
 opensearch-py==2.5.0
+pandas==2.2.3
 prettytable==3.11.0
 python-dateutil==2.9.0.post0
+python-dotenv==1.0.1
 python-irodsclient==2.1.0
+pytz==2024.2
 requests==2.31.0
 six==1.16.0
+tzdata==2024.1
 urllib3==1.26.18
 wcwidth==0.2.13

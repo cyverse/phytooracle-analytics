@@ -6,12 +6,13 @@ times and changing the entropy_file_path argument.
 
 from os import path
 import sys
-import csv
+# import csv
 import re
 import json
 import os
 import tarfile
 import tempfile
+import pandas as pd
 from irods.session import iRODSSession
 
 try:
@@ -20,63 +21,125 @@ except KeyError:
     _IRODS_ENV_FILE = path.expanduser('~/.irods/irods_environment.json')
 
 
+# def parse_fieldbook_csv_file(fieldbook_csv_path: str) -> dict:
+#     """
+#     Parses the fieldbook CSV file into a dictionary with plant names as keys.
+#     Each value is a dictionary that contains details about the plant's fieldbook data.
+
+#     Parameters:
+#     - fieldbook_csv_path (str): The file path to the CSV file to be parsed.
+
+#     Returns:
+#         A dictionary with plant names as keys and a dictionary of their corresponding fieldbook
+#         data as values. If a plant name is repeated, only the first occurrence is added to the
+#         dictionary. e.g.
+
+#         {
+#             'year': 2019,
+#             'experiment': "lettuce_season_1",
+#             'field': "south",
+#             'treatment': "treat1",
+#             'rep': "",
+#             'range': 2,
+#             'column': 4,
+#             'plot': 204,
+#             'type': "border",
+#             'genotype': "Green_Towers_BORDER"
+#         }
+#     """
+#     fieldbook_dict = {}
+
+#     with iRODSSession(irods_env_file=_IRODS_ENV_FILE) as session:
+#         with session.data_objects.open(fieldbook_csv_path, 'r') as csv_file:
+#             reader = csv.reader(csv_file)
+#             next(reader, None)  # Skip header
+#             for row in reader:
+#                 try:
+#                     field_entry = {
+#                         "year": int(row[0]),
+#                         "experiment": row[1],
+#                         "field": row[2],
+#                         "treatment": row[3],
+#                         "rep": row[4],
+#                         "range": int(row[4]),
+#                         "column": int(row[6]),
+#                         "plot": int(row[7]),
+#                         "type": row[8],
+#                         "genotype": row[9]
+#                     }
+#                     plant_name = row[10]
+#                     if plant_name in fieldbook_dict:
+#                         print(
+#                             f"Unexpected - Duplicate plant name found: {plant_name}. Ignoring it.")
+#                     else:
+#                         fieldbook_dict[plant_name] = field_entry
+#                 except ValueError as ve:
+#                     print(f"Issue with the number of columns or data conversion. Exiting!! \n{ve}")
+#                     sys.exit(1)
+#         return fieldbook_dict
+
+
+
+
+
+# NOTE: This is supposed to be a temporary implemenation. The final implementation should use the simpler csv module.
+# For some reason, currently, the csv module is claiming that the file has been provided as a binary file, not string. 
+# This is a workaround to get the data from the file - so we can focus on the main task.
 def parse_fieldbook_csv_file(fieldbook_csv_path: str) -> dict:
     """
     Parses the fieldbook CSV file into a dictionary with plant names as keys.
     Each value is a dictionary that contains details about the plant's fieldbook data.
 
     Parameters:
-    - fieldbook_csv_path (str): The file path to the CSV file to be parsed.
+    - fieldbook_csv_path (str): The file path to the CSV file to be parsed from iRODS.
 
     Returns:
         A dictionary with plant names as keys and a dictionary of their corresponding fieldbook
-        data as values. If a plant name is repeated, only the first occurrence is added to the
-        dictionary. e.g.
-
-        {
-            'year': 2019,
-            'experiment': "lettuce_season_1",
-            'field': "south",
-            'treatment': "treat1",
-            'rep': "",
-            'range': 2,
-            'column': 4,
-            'plot': 204,
-            'type': "border",
-            'genotype': "Green_Towers_BORDER"
-        }
+        data as values.
     """
     fieldbook_dict = {}
 
-    with iRODSSession(irods_env_file=_IRODS_ENV_FILE) as session:
-        with session.data_objects.open(fieldbook_csv_path, 'r') as csv_file:
-            reader = csv.reader(csv_file)
-            next(reader, None)  # Skip header
-            for row in reader:
-                try:
-                    field_entry = {
-                        "year": int(row[0]),
-                        "experiment": row[1],
-                        "field": row[2],
-                        "treatment": row[3],
-                        "rep": row[4],
-                        "range": int(row[4]),
-                        "column": int(row[6]),
-                        "plot": int(row[7]),
-                        "type": row[8],
-                        "genotype": row[9]
+    try:
+        # Access the file using iRODS
+        with iRODSSession(irods_env_file=_IRODS_ENV_FILE) as session:
+            with session.data_objects.open(fieldbook_csv_path, 'r') as csv_file:
+                # Use pandas to read the CSV content
+                df = pd.read_csv(csv_file, sep=",")  # Adjust the separator if needed
+                # Drop duplicate plant names, keeping the first occurrence
+                df = df.drop_duplicates(subset=['plant_name'], keep='first')
+
+                # Convert specific columns to the appropriate data types
+                df['year'] = df['year'].astype(int)
+                df['range'] = df['range'].astype(int)
+                df['column'] = df['column'].astype(int)
+                df['plot'] = df['plot'].astype(int)
+
+                # Convert the DataFrame into a dictionary of dictionaries
+                fieldbook_dict = df.set_index('plant_name').T.to_dict()
+
+                # Change all nan values to None
+                for plant_name, plant_dict in fieldbook_dict.items():
+                    fieldbook_dict[plant_name] = {
+                        k: v if pd.notna(v) else None for k, v in plant_dict.items()
                     }
-                    plant_name = row[10]
-                    if plant_name in fieldbook_dict:
-                        print(
-                            f"Unexpected - Duplicate plant name found: {plant_name}. Ignoring it.")
-                    else:
-                        fieldbook_dict[plant_name] = field_entry
-                except ValueError as ve:
-                    print(f"Issue with the number of columns or data conversion. Exiting!! \n{ve}")
-                    sys.exit(1)
+
         return fieldbook_dict
 
+    except FileNotFoundError as fe:
+        print(f"File not found: {fe}")
+        return {}
+
+    except pd.errors.EmptyDataError:
+        print("The file is empty or invalid.")
+        return {}
+
+    except ValueError as ve:
+        print(f"Data conversion issue: {ve}")
+        return {}
+
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+        return {}
 
 def download_and_extract_entropy_tar_file(irods_file_path: str) -> list[str]:
     """
@@ -96,7 +159,7 @@ def download_and_extract_entropy_tar_file(irods_file_path: str) -> list[str]:
             obj = session.data_objects.get(irods_file_path)
             replica = None
             for r in obj.replicas:
-                if r.status == 1:
+                if r.status.isnumeric() and int(r.status) == 1:
                     replica = r
                     break
             # Read data from the iRODS object into a buffer
@@ -177,6 +240,7 @@ def parse_url_details(url: str) -> dict:
 
 def _parse_entropy_tar_file(fieldbook_dict, csv_file_names, parsed_url):
     json_list = []
+    null_rows = set()
     for csv_file_name in csv_file_names:
         if not csv_file_name.endswith(".csv"):
             continue
@@ -210,11 +274,20 @@ def _parse_entropy_tar_file(fieldbook_dict, csv_file_names, parsed_url):
                 "plot": fb_info["plot"],
                 "id": f"{plant_name}_{scan_date}"
             }
+
+            # Convert all NaN values to None
+            for key, value in plant_dict.items():
+                if pd.isna(value):
+                    plant_dict[key] = None
+
             json_list.append(plant_dict)
+            # Get all the rows with NaN values in plant_dict
+            null_rows.update({k for k, v in plant_dict.items() if pd.isna(v)})
         else:
             print(f"{plant_name} not found in fieldbook. Check fieldbook data or plant name.")
             print(f"Ignoring {plant_name}")
 
+    print(f"Null rows: {null_rows}")
     # Create the output directory if it doesn't exist
     output_dir = "output"
     os.makedirs(output_dir, exist_ok=True)
@@ -238,7 +311,7 @@ def main(fieldbook_csv_path: str, entropy_file_path: str) -> None:
     """
     # Parse the fieldbook
     fieldbook_dict = parse_fieldbook_csv_file(fieldbook_csv_path)
-    print(fieldbook_dict)
+    # print(fieldbook_dict)
     # Parse the entropy file
     csv_file_names = download_and_extract_entropy_tar_file(entropy_file_path)
     # Parse the URL
