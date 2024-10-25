@@ -14,7 +14,13 @@ load_dotenv()
 from opensearchpy import OpenSearch, helpers
 import json
 
-paths = ["output/combined_plants_info_20200123T000000.000-0700.json"]  # Dummy
+# paths: all files in output/ directory
+paths = []
+for root, dirs, files in os.walk("output/"):
+    for file in files:
+        if file.endswith(".json"):
+            paths.append(os.path.join(root, file))
+print(f"Adding {len(paths)} files to the index.")
 for data_path in paths:
     with open(data_path, 'r') as file:
         data = json.load(file)

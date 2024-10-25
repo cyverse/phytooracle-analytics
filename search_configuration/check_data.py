@@ -35,6 +35,10 @@ if client.indices.exists(index=index_name):
     for hit in response['hits']['hits']:
         print(hit)
     print(f"Total number of documents in the index '{index_name}': {response['hits']['total']['value']}")
+
+    # Find the number of documents in the index
+    count = client.count(index=index_name)
+    print(f"Total number of documents in the index '{index_name}': {count['count']}")
 else:
     print(f"The index '{index_name}' does not exist.")
 

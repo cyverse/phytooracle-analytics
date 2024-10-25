@@ -15,24 +15,19 @@ def run_script_on_files(fieldbook_csv_path, directory):
         with iRODSSession(irods_env_file=irods_env_file) as session:
             # Access the specified directory in iRODS
             collection = session.collections.get(directory)
-
+            print(f"Accessed directory {directory}")
             # Loop through each data object (file) in the collection
-            for obj in collection.data_objects:
+            for obj in collection.subcollections:
                 file_path = os.path.join(directory, obj.name)
-                
-                try:
-                    # Open the file in streaming mode to avoid loading it all into memory
-                    with session.data_objects.open(file_path, 'r') as data_object:
-                        # Construct the command to run the Python script, passing the file path as param
-                        command = f"python3 data_preparation/data_preparation.py {fieldbook_csv_path} {file_path}"
-                        print(f"Running command: {command}")
-                        
-                        # Run the command (without loading the file into memory)
-                        os.system(command)
-                
-                except DataObjectDoesNotExist:
-                    print(f"File {file_path} not found in iRODS.")
-                    continue
+                file_name = file_path.split("/")[-1] + "_3d_volumes_entropy_v009.tar"
+                file_path+= "/individual_plants_out/"
+                file_path+= file_name
+                try: 
+                    # Run the script on the file
+                    print(f"Running script on {file_path}")
+                    os.system(f"python3 data_preparation/data_preparation.py {fieldbook_csv_path} {file_path}")
+                except Exception as e:
+                    print(f"An error occurred while running the script on {file_path}: {e}")
 
     except CollectionDoesNotExist:
         print(f"The directory {directory} does not exist in iRODS.")
@@ -50,3 +45,4 @@ if __name__ == "__main__":
 
 
 # python3 data_preparation/bulk_add.py /iplant/home/shared/phytooracle/tmp/season10_rgb_3d_updated_na.csv /iplant/home/shared/phytooracle/season_10_lettuce_yr_2020/level_3/scanner3DTop/2020-01-23/individual_plants_out/
+# python3 data_preparation/bulk_add.py /iplant/home/shared/phytooracle/season_14_sorghum_yr_2022/North_gantry_fieldbook_2022_replants.csv /iplant/home/shared/phytooracle/season_14_sorghum_yr_2022/level_2/scanner3DTop/sorghum/
