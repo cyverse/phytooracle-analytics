@@ -105,8 +105,10 @@ def parse_fieldbook_csv_file(fieldbook_csv_path: str) -> dict:
             with session.data_objects.open(fieldbook_csv_path, 'r') as csv_file:
                 # Use pandas to read the CSV content
                 df = pd.read_csv(csv_file, sep=",")  # Adjust the separator if needed
+                print(df)
                 # Drop duplicate plant names, keeping the first occurrence
                 df = df.drop_duplicates(subset=['plant_name'], keep='first')
+                print(df)
 
                 # Convert specific columns to the appropriate data types
                 df['year'] = df['year'].astype(int)
@@ -311,12 +313,25 @@ def main(fieldbook_csv_path: str, entropy_file_path: str) -> None:
     """
     # Parse the fieldbook
     fieldbook_dict = parse_fieldbook_csv_file(fieldbook_csv_path)
+    # Pretty print the first entry of the fieldbook dictionary
+    print("First entry of the fieldbook dictionary:")
+    for plant_name, plant_dict in fieldbook_dict.items():
+        print(f"Plant name: {plant_name}")
+        print(plant_dict)
+        break
+
     # print(fieldbook_dict)
     # Parse the entropy file
     csv_file_names = download_and_extract_entropy_tar_file(entropy_file_path)
+    # Pretty print the first 5 entries of the csv file names
+    print("First 5 entries of the csv file names:")
+    print(csv_file_names[:5])
     # Parse the URL
     parsed_url = parse_url_details(entropy_file_path)
-    # Combine everything above
+    # Pretty print the parsed URL
+    print("Parsed URL:")
+    print(parsed_url)
+    # # Combine everything above
     _parse_entropy_tar_file(fieldbook_dict, csv_file_names, parsed_url)
 
 
@@ -334,3 +349,7 @@ if __name__ == "__main__":
         sys.exit(0)
 
     main(fieldbook_csv_path=sys.argv[1], entropy_file_path=sys.argv[2])
+
+
+# python3 data_preparation/data_preparation.py /iplant/home/shared/phytooracle/season_10_lettuce_yr_2020/lettuce_field_book.csv /iplant/home/shared/phytooracle/season_10_lettuce_yr_2020/level_3/scanner3DTop/2020-01-23/individual_plants_out/2020-01-23_3d_volumes_entropy_v009.tar
+# python3 data_preparation/data_preparation.py /iplant/home/shared/phytooracle/season_14_sorghum_yr_2022/North_gantry_fieldbook_2022_replants.xlsx /iplant/home/shared/phytooracle/season_14_sorghum_yr_2022/level_2/scanner3DTop/sorghum/2022-05-05__19-55-41-328_sorghum/individual_plants_out/2022-05-05__19-55-41-328_sorghum_3d_volumes_entropy_v009.tar
