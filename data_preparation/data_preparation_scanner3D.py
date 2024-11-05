@@ -233,7 +233,8 @@ def _parse_entropy_tar_file(fieldbook_dict, csv_file_names, parsed_url):
                 "row": fb_info["row"],
                 "fb_type": fb_info["type"],
                 "plot": fb_info["plot"],
-                "id": f"{plant_name}_{scan_date}"
+                "id": f"{plant_name}_{scan_date}",
+                "sensor": "scanner3DTop",
             }
 
             # Convert all NaN values to None
@@ -250,7 +251,7 @@ def _parse_entropy_tar_file(fieldbook_dict, csv_file_names, parsed_url):
 
     print(f"Null rows: {null_rows}")
     # Create the output directory if it doesn't exist
-    output_dir = "output"
+    output_dir = "output/Scanner3DTop"
     os.makedirs(output_dir, exist_ok=True)
 
     # Writing the combined information to a JSON file to be index ready by OpenSearch
