@@ -52,6 +52,27 @@
       },
       "loc": {
         "type": "geo_point"
+      },
+      "file_path": {
+        "type": "keyword"
+      },
+      "entropy_file_path": {
+        "type": "keyword"
+      },
+      "fieldbook_file_path": {
+        "type": "keyword"
+      },
+      "file_size":
+      {
+        "type": "long"
+      },
+      "entropy_file_size":
+      {
+        "type": "long"
+      },
+      "fieldbook_file_size":
+      {
+        "type": "long"
       }
     }
   }

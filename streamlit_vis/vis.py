@@ -92,6 +92,47 @@ def get_scan_count(client, index_name, query):
         "by_instrument": {
             "terms": {
                 "field": "instrument"
+            },
+            "aggs": {
+                "unique_files": {
+                    "terms": {
+                        "field": "file_path",
+                        "size": 10000  # Adjust size as needed
+                    },
+                    "aggs": {
+                        "total_file_size": {
+                            "sum": {
+                                "field": "file_size"
+                            }
+                        }
+                    }
+                },
+                "unique_fieldbook_files": {
+                    "terms": {
+                        "field": "fieldbook_file_path",
+                        "size": 10000  # Adjust size as needed
+                    },
+                    "aggs": {
+                        "total_fieldbook_file_size": {
+                            "sum": {
+                                "field": "fieldbook_file_size"
+                            }
+                        }
+                    }
+                },
+                "unique_entropy_files": {
+                    "terms": {
+                        "field": "entropy_file_name.keyword",
+                        "size": 10000  # Adjust size as needed
+                    },
+                    "aggs": {
+                        "total_entropy_file_size": {
+                            "sum": {
+                                "field": "entropy_file_size"
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -100,20 +141,33 @@ def get_scan_count(client, index_name, query):
 
     response = client.search(index=index_name, body=query)
     
-    # Put the data in a dataframe with rows instrument, number of scans
+    # Put the data in a dataframe with rows instrument, number of scans, and total file size
     data = []
 
     total_scans = 0
+    total_file_size = 0
     for instrument in response['aggregations']['by_instrument']['buckets']:
+        # print(instrument)
+        instrument_scans = instrument['doc_count']
+        
+        instrument_file_size = sum([file['total_file_size']['value'] for file in instrument['unique_files']['buckets']])
+        instrument_fieldbook_file_size = sum([file['total_fieldbook_file_size']['value'] for file in instrument['unique_fieldbook_files']['buckets']])
+        instrument_entropy_file_size = sum([file['total_entropy_file_size']['value'] for file in instrument['unique_entropy_files']['buckets']])
+        
+        total_instrument_file_size = instrument_file_size + instrument_fieldbook_file_size + instrument_entropy_file_size
+        # print(instrument_file_size, instrument_fieldbook_file_size, instrument_entropy_file_size)
         data.append({
             'Instrument': instrument['key'],
-            'Number of Scans': instrument['doc_count']
+            'Number of Scans': instrument_scans,
+            'Total File Size (in bytes)': total_instrument_file_size
         })
-        total_scans += instrument['doc_count']
+        total_scans += instrument_scans
+        total_file_size += total_instrument_file_size
 
     data.append({
         'Instrument': 'Total',
-        'Number of Scans': total_scans
+        'Number of Scans': total_scans,
+        'Total File Size (in bytes)': total_file_size
     })
 
     
