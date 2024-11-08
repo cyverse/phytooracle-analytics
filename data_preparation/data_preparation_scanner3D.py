@@ -78,6 +78,10 @@ def parse_fieldbook_csv_file(fieldbook_csv_path: str) -> dict:
                         k: v if pd.notna(v) else None for k, v in plant_dict.items()
                     }
 
+                # Add file metadata information : fieldbook_file_path & fieldbook_file_size
+                fieldbook_dict["fieldbook_file_path"] = fieldbook_csv_path
+                fieldbook_dict["fieldbook_file_size"] = session.data_objects.get(fieldbook_csv_path).size
+
         return fieldbook_dict
 
     except FileNotFoundError as fe:
@@ -130,7 +134,9 @@ def download_and_extract_entropy_tar_file(irods_file_path: str) -> list[str]:
             with tarfile.open(local_tar_path) as tar:
                 tar.extractall(path=tmpdir_name)
                 file_names = tar.getnames()  # List the file names after extracting
-        return file_names
+                file_sizes = [tar.getmember(file_name).size for file_name in file_names]
+
+        return file_names, file_sizes
 
 
 def parse_url_details(url: str) -> dict:
@@ -196,7 +202,7 @@ def parse_url_details(url: str) -> dict:
 def _parse_entropy_tar_file(fieldbook_dict, csv_file_names, parsed_url):
     json_list = []
     null_rows = set()
-    for csv_file_name in csv_file_names:
+    for csv_file_name, csv_file_size in zip(*csv_file_names):
         if not csv_file_name.endswith(".csv"):
             continue
         plant_name = csv_file_name.removesuffix("_volumes_entropy.csv")
@@ -226,6 +232,10 @@ def _parse_entropy_tar_file(fieldbook_dict, csv_file_names, parsed_url):
                 "fb_entry_id": fb_info["entry_id"],
                 "seed_src_id": fb_info["seed-sourceid"],
                 "replicated_in_2020": fb_info["replicated_in_2020"],
+                "fieldbook_file_path": fieldbook_dict["fieldbook_file_path"],
+                "fieldbook_file_size": fieldbook_dict["fieldbook_file_size"],
+                "entropy_file_name": csv_file_name,
+                "entropy_file_size": csv_file_size,
                 # "experiment": fb_info["experiment"],
                 "treat": fb_info["treatment"],
                 "rep": fb_info["rep"],
@@ -234,7 +244,7 @@ def _parse_entropy_tar_file(fieldbook_dict, csv_file_names, parsed_url):
                 "fb_type": fb_info["type"],
                 "plot": fb_info["plot"],
                 "id": f"{plant_name}_{scan_date}",
-                "sensor": "scanner3DTop",
+                "sensor": "scanner3DTop"
             }
 
             # Convert all NaN values to None

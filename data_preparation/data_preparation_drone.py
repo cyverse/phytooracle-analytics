@@ -43,6 +43,10 @@ def extract_csv_from_tar_file(irods_file_path: str) -> pd.DataFrame:
                         if member.isfile() and member.name.endswith('.csv'):
                             csv_file = tar.extractfile(member)
                             df = pd.read_csv(csv_file)
+                            # print(df.head())
+                            df["file_path"] = member.name
+                            df["file_size"] = member.size
+                            # print(df.head())
                             print(f"Extracted from {irods_file_path}")
                             print(df.head())
                             return df

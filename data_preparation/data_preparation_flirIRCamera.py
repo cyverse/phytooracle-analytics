@@ -30,7 +30,9 @@ def parse_ir_csv_file(ir_csv_path: str) -> dict:
 
     with iRODSSession(irods_env_file=_IRODS_ENV_FILE) as session:
         with session.data_objects.open(ir_csv_path, 'r') as csv_file:
-
+            # Get the size of the file
+            file_size = session.data_objects.get(ir_csv_path).size
+            file_path = ir_csv_path
             # Read the CSV file
             df = pd.read_csv(csv_file, sep = ",")
 
@@ -55,7 +57,7 @@ def parse_ir_csv_file(ir_csv_path: str) -> dict:
 
             # Make a data field called "loc" that contains the lat and lon
             data = [
-                {**data_point, "loc": {"lat": data_point["lat"], "lon": data_point["lon"]}}
+                {**data_point, "loc": {"lat": data_point["lat"], "lon": data_point["lon"]}, "file_size": file_size, "file_path": file_path}
                 for data_point in data
             ]
 
