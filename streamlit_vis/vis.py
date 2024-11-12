@@ -38,11 +38,11 @@ def filters():
     # Add a title
     st.sidebar.title('Filters')
     # Filter for Crop Type -dropdown
-    crop_type = st.sidebar.selectbox('Crop Type', [None, 'sorghum', 'lettuce', 'maize'])
+    crop_type = st.sidebar.multiselect('Crop Type', ['sorghum', 'lettuce', 'maize'])
     # Allow a date range for scanning (by date)
     scan_date_from = st.sidebar.date_input('Scan Date From', value=datetime.date(2018, 1, 1))
     scan_date_to = st.sidebar.date_input('Scan Date To', value=datetime.date(2030, 12, 31))
-    sensor_type = st.sidebar.selectbox('Sensor Type', [None, 'flirIrCamera', 'scanner3DTop', 'drone'])
+    sensor_type = st.sidebar.multiselect('Sensor Type', ['flirIrCamera', 'scanner3DTop', 'drone', 'stereoTop'])
 
 
     return crop_type, scan_date_from, scan_date_to, sensor_type
@@ -60,7 +60,7 @@ def get_data(client, crop_type, from_date, to_date, sensor_type, index_name):
     }
 
     if crop_type:
-        query['query']["bool"]["must"].append({"match": {"crop_type": crop_type}})
+        query['query']["bool"]["must"].append({"terms": {"crop_type": crop_type}})
 
     date_range_query = {
     }
@@ -71,7 +71,7 @@ def get_data(client, crop_type, from_date, to_date, sensor_type, index_name):
     if from_date or to_date: 
         query['query']["bool"]["must"].append({"range": {"scan_date": date_range_query}})
     if sensor_type:
-        query['query']["bool"]["must"].append({"match": {"instrument": sensor_type}})
+        query['query']["bool"]["must"].append({"terms": {"instrument": sensor_type}})
 
     # Add a temporary size to get the data
     query['size'] = 5
@@ -224,6 +224,11 @@ def get_vis(client, index_name, query):
 
 
 def app():
+    global first_time
+    if 'first_time' not in st.session_state:
+        st.session_state.first_time = True
+    first_time = st.session_state.first_time
+
     index_name = "phytooracle-index"
     host = os.getenv("ELASTIC_HOST")
     port = os.getenv("ELASTIC_PORT")
@@ -238,10 +243,14 @@ def app():
     update_button = st.sidebar.button('Update')
 
     # Get the data
-    if update_button:
+    if update_button or first_time:
+        first_time = False
         query = get_data(client, crop_type, from_date, to_date, sensor_type, index_name)
         get_scan_count(client, index_name, query)
         get_vis(client, index_name, query)
+
+
+        
 
 if __name__ == "__main__":
     app()

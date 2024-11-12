@@ -21,6 +21,7 @@ opensearch-py==2.5.0
 packaging==24.1
 pandas==2.2.3
 pillow==11.0.0
+plotly==5.24.1
 prettytable==3.11.0
 protobuf==5.28.3
 pyarrow==18.0.0
