@@ -1,8 +1,8 @@
-# PhytoOracle Data Analytics Solution
+# PhytoOracle Data Analytics
 
 ## Overview
 
-This project leverages OpenSearch to index, search and visualize data scanned by the Field Analyzer, a state-of-the-art outdoor plant phenotyping platform located at the Maricopa Agricultural Center (MAC), focusing on plant metrics across different growth stages. 
+This project leverages OpenSearch to index, search and visualize data scanned by the Field Analyzer, a state-of-the-art outdoor plant phenotyping platform located at the Maricopa Agricultural Center (MAC), focusing on plant metrics across different growth stages.
 
 By integrating visualization dashboards and advanced searching and indexing capabilities, the solution aims to enable researchers to interact with, navigate and analyze the complex data sets seamlessly.
 
@@ -20,14 +20,17 @@ By integrating visualization dashboards and advanced searching and indexing capa
 
 
 ## USAGE
-- **Coming soon**
 
-## NOTE
+- **Installing dependencies**: To install dependencies, run the following command:
+    ```pip install -r requirements.txt```
 
-- Please use `requirements_temp.txt` for now.
+- **OpenSearch Configuration**: Get an instance of OpenSearch/ElasticSearch set up and then refer to `example.env` to write an `.env` file with the necessary environment variables for our program to access OpenSearch.
 
+- **Data Preparation**: To perform data preparation, please refer to the documentation provided in the `data_preparation/` directory. The usage of data preparation is unique for each sensor type. All prepared data should be available in the `output/` directory. 
 
-## TODO
+- **OpenSearch**: Refer to the documentation provided in `search_configuration` to populate the data in the OpenSearch index.
 
-- `data_preparation/data_preparation.py`: Remove `Pandas` dependency - should be doable with simple csv_reader. 
-- Remove `myenv` from `.gitignore` - too specific for one user (Tanmay Agrawal)
+- **Visualization**: To visualize the data, run:
+    ```
+    streamlit run app/vis.py
+    ```

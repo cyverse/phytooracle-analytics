@@ -1,3 +1,18 @@
+"""
+This module provides functionalities for visualizing PhytoOracle data using Streamlit and Plotly.
+It connects to an OpenSearch instance to retrieve and filter data based on user inputs from the Streamlit sidebar.
+The module includes functions to display data overviews, scan counts, and various visualizations.
+Functions:
+    - opensearch_connect(host, port, auth): Connects to an OpenSearch instance.
+    - filters(): Retrieves filter options from the Streamlit sidebar.
+    - get_data(client, crop_type, from_date, to_date, sensor_type, year, index_name): Retrieves data from OpenSearch based on filters.
+    - get_scan_count(client, index_name, query): Aggregates and displays the number of records by instrument.
+    - get_vis(client, index_name, query): Displays a line chart of data records by scan date for each instrument.
+    - get_comparision_vis(client, index_name, query): Compares data records across selected sensors and seasons.
+    - app(): Main function to run the Streamlit app.
+"""
+
+
 import os
 import sys
 import pandas as pd
@@ -203,7 +218,7 @@ def get_vis(client, index_name, query):
 
     response = client.search(index=index_name, body=query)
     # Check the response size
-    resp_size = len(response['aggregations']['by_scan_date']['buckets'])
+    # resp_size = len(response['aggregations']['by_scan_date']['buckets'])
 
     
     # Retrieve the data to a dataframe with columns: scan_date, instrument, count
