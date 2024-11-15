@@ -25,7 +25,7 @@ def run_script_on_files(fieldbook_csv_path, directory):
                 try: 
                     # Run the script on the file
                     print(f"Running script on {file_path}")
-                    os.system(f"python3 data_preparation/data_preparation_scanner3D.py {fieldbook_csv_path} {file_path}")
+                    os.system(f"python3 data_preparation/helper/scanner3D.py {fieldbook_csv_path} {file_path}")
                 except Exception as e:
                     print(f"An error occurred while running the script on {file_path}: {e}")
 
@@ -45,5 +45,5 @@ if __name__ == "__main__":
 
 
 
-# python3 data_preparation/bulk_add_scanner3D.py /iplant/home/shared/phytooracle/season_14_sorghum_yr_2022/North_gantry_fieldbook_2022_replants.csv /iplant/home/shared/phytooracle/season_14_sorghum_yr_2022/level_2/scanner3DTop/sorghum/
-# python3 data_preparation/bulk_add_scanner3D.py /iplant/home/shared/phytooracle/season_11_sorghum_yr_2020/Gantry_fieldbook_Aug-2020_Revised_Irr_TRT.csv /iplant/home/shared/phytooracle/season_11_sorghum_yr_2020/level_2/scanner3DTop/
+# python3 data_preparation/scanner3D.py /iplant/home/shared/phytooracle/season_14_sorghum_yr_2022/North_gantry_fieldbook_2022_replants.csv /iplant/home/shared/phytooracle/season_14_sorghum_yr_2022/level_2/scanner3DTop/sorghum/
+# python3 data_preparation/scanner3D.py /iplant/home/shared/phytooracle/season_11_sorghum_yr_2020/Gantry_fieldbook_Aug-2020_Revised_Irr_TRT.csv /iplant/home/shared/phytooracle/season_11_sorghum_yr_2020/level_2/scanner3DTop/

@@ -54,8 +54,8 @@ def extract_csv_from_tar_file(irods_file_path: str) -> pd.DataFrame:
     except FileNotFoundError as fe:
         print(f"File not found: {fe}")
         return pd.DataFrame()
-    except pd.errors.EmptyDataError as ede:
-        print(f"The file is empty or invalid.")
+    except pd.errors.EmptyDataError:
+        print("The file is empty or invalid.")
         return pd.DataFrame()
     except ValueError as ve:
         print(f"Data conversion issue: {ve}")
@@ -117,8 +117,7 @@ def get_output(df: pd.DataFrame, irods_file_path: str) -> list:
             "drone_type": drone_type,
             "altitude_m": altitude_m,
             "camera_type": camera_type,
-            "genotype": "_".join(data_point["accession"].strip().split(" ")) + "_" + str(data_point["plot"]),
-          
+            "genotype": "_".join(data_point["accession"].strip().split(" ")) + "_" + str(data_point["plot"]),      
         } for data_point in data
     ]
 

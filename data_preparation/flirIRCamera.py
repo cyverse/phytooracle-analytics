@@ -4,15 +4,15 @@ The data is then uploaded to the OpenSearch index.
 """
 
 from os import path
-import sys 
-import json 
-import os 
+import sys
+import json
+import os
 import re
 import pandas as pd
 from irods.session import iRODSSession
 
 
-try: 
+try:
     _IRODS_ENV_FILE = os.environ['IRODS_ENVIRONMENT_FILE']
 except KeyError:
     _IRODS_ENV_FILE = path.expanduser('~/.irods/irods_environment.json')
@@ -42,12 +42,12 @@ def parse_ir_csv_file(ir_csv_path: str) -> dict:
             # Remove the index column
             if "index" in df.columns:
                 del df["index"]
-                
+
             # Rename date to scan_date
             df.rename(columns={"date": "scan_date"}, inplace=True)
-            
+
             # Remove everything after last underscore in the scan_date column
-            try:  
+            try:
                 df["sd"] = df["scan_date"].str.rsplit("_", n=1, expand=True)[0]
                 df["sd"] = pd.to_datetime(df["sd"], format="%Y-%m-%d__%H-%M-%S-%f").dt.strftime('%Y%m%dT%H%M%S.%f%z')
             except ValueError:
@@ -66,7 +66,7 @@ def parse_ir_csv_file(ir_csv_path: str) -> dict:
             df["plant_name"] = df["plant_name"].fillna("NA")
 
             df["roi_temp"] = df["roi_temp"].fillna(0)
-            
+
             # if the df contains genotype_x or genotype_y, then fillNA
             if "genotype_x" in df.columns:
                 df["genotype_x"] = df["genotype_x"].fillna("NA")
@@ -134,7 +134,7 @@ def main(ir_csv_path: str) -> None:
         os.makedirs(output_dir)
 
     output_path = path.join(output_dir, f"flir_ir_camera_{url_details['season']}_{url_details['crop_type']}_{url_details['level']}.json")
-    with open(output_path, "w") as file:
+    with open(output_path, "w", encoding="utf-8") as file:
         json.dump(data, file, indent=4)
 
     print(f"Data saved to {output_path}")

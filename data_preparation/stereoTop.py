@@ -9,7 +9,6 @@ import json
 import os
 import re
 import pandas as pd
-from dateutil.parser import parse
 from irods.session import iRODSSession
 
 try:
@@ -18,7 +17,7 @@ except KeyError:
     _IRODS_ENV_FILE = path.expanduser('~/.irods/irods_environment.json')
 
 
-    
+
 def parse_clustering_csv_file(ir_csv_path: str)-> dict:
     """
     Parses the CSV file from the stereoTop sensor and returns a dictionary.
@@ -37,13 +36,13 @@ def parse_clustering_csv_file(ir_csv_path: str)-> dict:
             file_path = ir_csv_path
             # Read the CSV file
             df = pd.read_csv(csv_file, sep = ",")
-            
+
             # Remove the unnamed 0th column - index column
             df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
 
             # Remove the idnex column
             df = df.loc[:, ~df.columns.str.contains('^index')]
-            
+
             # Rename date to scan_date
             df.rename(columns={"date": "scan_date"}, inplace=True)
 
@@ -124,7 +123,7 @@ def main(ir_csv_path: str) -> None:
         os.makedirs(output_dir)
 
     output_path = path.join(output_dir, f"stereoTop.json_{url_details['season']}_{url_details['crop_type']}_{url_details['level']}.json")
-    with open(output_path, "w") as file:
+    with open(output_path, "w", encoding="utf-8") as file:
         json.dump(data, file, indent=4)
 
     print(f"Data saved to {output_path}")
