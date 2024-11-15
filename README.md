@@ -26,9 +26,9 @@ By integrating visualization dashboards and advanced searching and indexing capa
 
 - **OpenSearch Configuration**: Get an instance of OpenSearch/ElasticSearch set up and then refer to `example.env` to write an `.env` file with the necessary environment variables for our program to access OpenSearch.
 
-- **Data Preparation**: To perform data preparation, please refer to the documentation provided in the `data_preparation/` directory. The usage of data preparation is unique for each sensor type. All prepared data should be available in the `output/` directory. 
+- **Data Preparation**: To perform data preparation, please refer to the documentation provided in the [data_preparation](data_preparation) directory. The usage of data preparation is unique for each sensor type. All prepared data should be available in the `output/` directory. 
 
-- **OpenSearch**: Refer to the documentation provided in `search_configuration` to populate the data in the OpenSearch index.
+- **OpenSearch**: Refer to the documentation provided in [search_configuration](search_configuration) to populate the data in the OpenSearch index.
 
 - **Visualization**: To visualize the data, run:
     ```
