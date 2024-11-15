@@ -108,7 +108,7 @@ def get_output(df: pd.DataFrame, irods_file_path: str) -> list:
             **data_point,
             "season": season,
             "crop_type": crop_type,
-            "year_of_planting": year,
+            "year": year,
             "level": level,
             "instrument": instrument,
             "scan_date": parse(scan_date).strftime('%Y%m%dT%H%M%S.%f%z') + "-0700",

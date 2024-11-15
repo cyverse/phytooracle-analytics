@@ -86,17 +86,18 @@ def parse_url_details(url: str) -> dict:
     - dict: A dictionary containing the extracted details.
     """
     pattern = (
-        r"/season_([0-9]+)_([a-zA-Z]+)_yr_[0-9]+" +
+        r"/season_([0-9]+)_([a-zA-Z]+)_yr_([0-9]+)" +
         r"/level_([0-9]+)" +
         r"/([^/]+)" +
         r"/[^w]+?"
         )
     match = re.search(pattern, url)
     if match:
-        season, crop_type, level, instrument = match.groups()
+        season, crop_type, year, level, instrument = match.groups()
         return {
             "season": int(season),
             "crop_type": crop_type,
+            "year": int(year),
             "level": int(level),
             "instrument": instrument
         }
@@ -122,7 +123,7 @@ def main(ir_csv_path: str) -> None:
     if not path.exists(output_dir):
         os.makedirs(output_dir)
 
-    output_path = path.join(output_dir, "stereoTop.json")
+    output_path = path.join(output_dir, f"stereoTop.json_{url_details['season']}_{url_details['crop_type']}_{url_details['level']}.json")
     with open(output_path, "w") as file:
         json.dump(data, file, indent=4)
 
@@ -136,3 +137,6 @@ if __name__ == "__main__":
 
     ir_csv_path = sys.argv[1]
     main(ir_csv_path)
+
+# /iplant/home/shared/phytooracle/season_14_sorghum_yr_2022/level_2/stereoTop/season_14_clustering.csv
+# /iplant/home/shared/phytooracle/season_11_sorghum_yr_2020/level_3/stereoTop/season_11_clustering.csv

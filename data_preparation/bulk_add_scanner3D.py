@@ -46,3 +46,4 @@ if __name__ == "__main__":
 
 
 # python3 data_preparation/bulk_add_scanner3D.py /iplant/home/shared/phytooracle/season_14_sorghum_yr_2022/North_gantry_fieldbook_2022_replants.csv /iplant/home/shared/phytooracle/season_14_sorghum_yr_2022/level_2/scanner3DTop/sorghum/
+# python3 data_preparation/bulk_add_scanner3D.py /iplant/home/shared/phytooracle/season_11_sorghum_yr_2020/Gantry_fieldbook_Aug-2020_Revised_Irr_TRT.csv /iplant/home/shared/phytooracle/season_11_sorghum_yr_2020/level_2/scanner3DTop/

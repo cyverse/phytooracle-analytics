@@ -83,3 +83,5 @@ for data_path in paths:
         print(f"Failed to index {failed} documents.")
     except Exception as e:
         print(f"An error occurred while indexing the data: {e}")
+        # Print the error in detail
+        print(e.info)

@@ -45,13 +45,20 @@ def parse_fieldbook_csv_file(fieldbook_csv_path: str) -> dict:
                 # Use pandas to read the CSV content
                 df = pd.read_csv(csv_file, sep=",")  # Adjust the separator if needed
 
-               
+            
+                # Convert all column names to lowercase
+                df.columns = df.columns.str.lower()
+
+                
                 print(df.head())
+
                 # Convert specific columns to the appropriate data types
-                df['year'] = df['year'].astype(int)
+                if 'year' in df.columns:
+                    df['year'] = df['year'].astype(int)
                 df['range'] = df['range'].astype(int)
                 # df['column'] = df['column'].astype(int)
-                df['row'] = df['row'].astype(int)
+                if 'row' in df.columns:
+                    df['row'] = df['row'].astype(int) 
                 df['plot'] = df['plot'].astype(int)
                 
                 # Set df['rep'] to 0 if it is NaN
@@ -59,6 +66,18 @@ def parse_fieldbook_csv_file(fieldbook_csv_path: str) -> dict:
                 
                 # In any other column, replace nan with NA
                 df = df.fillna('NA')
+
+
+                # To concur with 2020 fieldbook data - checking fields
+                # if pi_accession is present, use it as accession
+                if 'pi_accession' in df.columns:
+                    # rename it to accession
+                    df.rename(columns={"pi_accession": "accession"}, inplace=True)
+
+                # if "revised_irrigation_treatment" is present, use it as treatment
+                if 'revised_irrigation_treatment' in df.columns:
+                    # rename it to treatment
+                    df.rename(columns={"revised_irrigation_treatment": "treatment"}, inplace=True)
 
                 # Add a new row df['uid'] = df['species'] + df['plot']
                 df['uid'] = df['accession'] + "_" + df['plot'].astype(str)
@@ -223,15 +242,15 @@ def _parse_entropy_tar_file(fieldbook_dict, csv_file_names, parsed_url):
                 "genotype": genotype,
                 "season": parsed_url["season"],
                 "crop_type": parsed_url["crop_type"],
-                "year_of_planting": fb_info["year"],
+                "year": fb_info["year"] if "year" in fb_info else parsed_url["YYYY"],
                 "level": parsed_url["level"],
                 "instrument": parsed_url["instrument"],
                 "scan_date": scan_date,
                 "species": fb_info["species"],
                 "accession": fb_info["accession"],
-                "fb_entry_id": fb_info["entry_id"],
-                "seed_src_id": fb_info["seed-sourceid"],
-                "replicated_in_2020": fb_info["replicated_in_2020"],
+                "fb_entry_id": fb_info["entry_id"] if "entry_id" in fb_info else "NA",
+                "seed_src_id": fb_info["seed-sourceid"] if "seed-sourceid" in fb_info else "NA",
+                "replicated_in_2020": fb_info["replicated_in_2020"] if "replicated_in_2020" in fb_info else "NA",
                 "fieldbook_file_path": fieldbook_dict["fieldbook_file_path"],
                 "fieldbook_file_size": fieldbook_dict["fieldbook_file_size"],
                 "entropy_file_name": csv_file_name,
@@ -240,7 +259,7 @@ def _parse_entropy_tar_file(fieldbook_dict, csv_file_names, parsed_url):
                 "treat": fb_info["treatment"],
                 "rep": fb_info["rep"],
                 "range": fb_info["range"],
-                "row": fb_info["row"],
+                "row": fb_info["row"] if "row" in fb_info else None,
                 "fb_type": fb_info["type"],
                 "plot": fb_info["plot"],
                 "id": f"{plant_name}_{scan_date}",

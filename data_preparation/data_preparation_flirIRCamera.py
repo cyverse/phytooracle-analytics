@@ -39,19 +39,40 @@ def parse_ir_csv_file(ir_csv_path: str) -> dict:
             # Remove the unnamed 0th column - index column
             df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
 
+            # Remove the index column
+            if "index" in df.columns:
+                del df["index"]
+                
             # Rename date to scan_date
             df.rename(columns={"date": "scan_date"}, inplace=True)
             
             # Remove everything after last underscore in the scan_date column
-            df["scan_date"] = df["scan_date"].str.rsplit("_", n=1, expand=True)[0]
-
-            df["scan_date"] = pd.to_datetime(df["scan_date"], format="%Y-%m-%d__%H-%M-%S-%f").dt.strftime('%Y%m%dT%H%M%S.%f%z')
+            try:  
+                df["sd"] = df["scan_date"].str.rsplit("_", n=1, expand=True)[0]
+                df["sd"] = pd.to_datetime(df["sd"], format="%Y-%m-%d__%H-%M-%S-%f").dt.strftime('%Y%m%dT%H%M%S.%f%z')
+            except ValueError:
+                df["sd"] = df["scan_date"].str.split("-", n=1, expand=True)[1]
+                df["sd"] = pd.to_datetime(df["sd"], format="%Y-%m-%d__%H-%M-%S-%f").dt.strftime('%Y%m%dT%H%M%S.%f%z')
+            except ValueError:
+                df["sd"] = pd.to_datetime(df["scan_date"], format="%Y-%m-%d__%H-%M-%S-%f").dt.strftime('%Y%m%dT%H%M%S.%f%z')
+            finally:
+                df["scan_date"] = df["sd"]
+                df.drop(columns=["sd"], inplace=True)
 
             # Add UTC timezone to the scan_date using -0700
             df["scan_date"] = df["scan_date"] + "-0700"
 
             df["sensor"] = "flir_ir_camera"
-        
+            df["plant_name"] = df["plant_name"].fillna("NA")
+
+            df["roi_temp"] = df["roi_temp"].fillna(0)
+            
+            # if the df contains genotype_x or genotype_y, then fillNA
+            if "genotype_x" in df.columns:
+                df["genotype_x"] = df["genotype_x"].fillna("NA")
+            if "genotype_y" in df.columns:
+                df["genotype_y"] = df["genotype_y"].fillna("NA")
+
             # Convert the dataframe to a dictionary
             data = df.to_dict(orient="records")
 
@@ -75,17 +96,18 @@ def parse_url_details(url: str) -> dict:
     - dict: A dictionary containing the extracted details.
     """
     pattern = (
-        r"/season_([0-9]+)_([a-zA-Z]+)_yr_[0-9]+" +
+        r"/season_([0-9]+)_([a-zA-Z]+)_yr_([0-9]+)" +
         r"/level_([0-9]+)" +
         r"/([^/]+)" +
         r"/[^w]+?"
         )
     match = re.search(pattern, url)
     if match:
-        season, crop_type, level, instrument = match.groups()
+        season, crop_type, year, level, instrument = match.groups()
         return {
             "season": int(season),
             "crop_type": crop_type,
+            "year": int(year),
             "level": int(level),
             "instrument": instrument
         }
@@ -111,7 +133,7 @@ def main(ir_csv_path: str) -> None:
     if not path.exists(output_dir):
         os.makedirs(output_dir)
 
-    output_path = path.join(output_dir, "flir_ir_camera.json")
+    output_path = path.join(output_dir, f"flir_ir_camera_{url_details['season']}_{url_details['crop_type']}_{url_details['level']}.json")
     with open(output_path, "w") as file:
         json.dump(data, file, indent=4)
 
