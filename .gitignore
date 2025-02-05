@@ -1,6 +1,7 @@
-.venv
-.vscode
-.env*
-output/*
-actions.json
-myenv
+**/.venv
+**/.vscode
+**/.env*
+**/output/*
+**/actions.json
+**/myenv
+**/__pycache__/

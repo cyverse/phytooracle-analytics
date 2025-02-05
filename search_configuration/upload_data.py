@@ -58,6 +58,40 @@ for data_path in paths:
     with open(data_path, 'r') as file:
         data = json.load(file)
         
+        # Enrich data with AZMET weather data
+        # "data" contains a field called scan_date
+        # azmet data, found in azmet_output/ directory, is filtered by year, so all weather data from year 2020 is in azmet_output/2020.json
+        # "data" is in the format: {scan_date: scan_date, ...}, eg. 20220512T000000.000000-0700
+        # azmet data is in the format: {year: year, day_of_year: day_of_year....}
+        # We need to convert the scan_date to a datetime object, extract the year and day_of_year, and then find the corresponding weather data in the azmet data
+        # and then add the weather data to the "data" object
+        
+
+        # Load AZMET data for 2020, 2021, 2022 in a single dictionary
+        azmet_data = {}
+        for year in range(2020, 2023):
+            with open(f"azmet_output/{year}.json", 'r') as azmet_file:
+                azmet_data[year] = {entry["day_of_year"]: entry for entry in json.load(azmet_file)}
+        # print(azmet_data)
+
+        for entry in data:
+            try:
+                scan_date = datetime.strptime(entry["scan_date"], "%Y%m%dT%H%M%S.%f%z")
+                year = scan_date.year
+                day_of_year = scan_date.timetuple().tm_yday
+                
+                # print(f"Extracting data for {year} and day of year {day_of_year}")
+                # Find the corresponding weather data in the azmet data
+                weather_data = azmet_data[year][str(day_of_year)]
+                
+                for key, value in weather_data.items():
+                    entry[f"azmet_{key}"] = value
+
+    
+            except ValueError:
+                print(f"Could not convert {entry['scan_date']} to a datetime object.")
+                continue
+
         # # Convert all scan dates to datetime objects and then to isoformat
         # for entry in data:
         #     try:

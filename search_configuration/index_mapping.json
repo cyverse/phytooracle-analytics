@@ -62,17 +62,98 @@
       "fieldbook_file_path": {
         "type": "keyword"
       },
-      "file_size":
-      {
+      "file_size": {
         "type": "long"
       },
-      "entropy_file_size":
-      {
+      "entropy_file_size": {
         "type": "long"
       },
-      "fieldbook_file_size":
-      {
+      "fieldbook_file_size": {
         "type": "long"
+      },
+      "azmet_year": {
+        "type": "integer"
+      },
+      "azmet_day_of_year": {
+        "type": "integer"
+      },
+      "azmet_station_number": {
+        "type": "integer"
+      },
+      "azmet_air_temp_max": {
+        "type": "float"
+      },
+      "azmet_air_temp_min": {
+        "type": "float"
+      },
+      "azmet_air_temp_mean": {
+        "type": "float"
+      },
+      "azmet_rh_max": {
+        "type": "float"
+      },
+      "azmet_rh_min": {
+        "type": "float"
+      },
+      "azmet_rh_mean": {
+        "type": "float"
+      },
+      "azmet_vpd_mean": {
+        "type": "float"
+      },
+      "azmet_solar_radiation_total": {
+        "type": "float"
+      },
+      "azmet_precipitation_total": {
+        "type": "float"
+      },
+      "azmet_soil_temp_4in_max": {
+        "type": "float"
+      },
+      "azmet_soil_temp_4in_min": {
+        "type": "float"
+      },
+      "azmet_soil_temp_4in_mean": {
+        "type": "float"
+      },
+      "azmet_soil_temp_20in_max": {
+        "type": "float"
+      },
+      "azmet_soil_temp_20in_min": {
+        "type": "float"
+      },
+      "azmet_soil_temp_20in_mean": {
+        "type": "float"
+      },
+      "azmet_wind_speed_mean": {
+        "type": "float"
+      },
+      "azmet_wind_vector_magnitude": {
+        "type": "float"
+      },
+      "azmet_wind_vector_direction": {
+        "type": "float"
+      },
+      "azmet_wind_direction_std_dev": {
+        "type": "float"
+      },
+      "azmet_max_wind_speed": {
+        "type": "float"
+      },
+      "azmet_heat_units": {
+        "type": "float"
+      },
+      "azmet_eto_reference": {
+        "type": "float"
+      },
+      "azmet_etos_reference": {
+        "type": "float"
+      },
+      "azmet_actual_vapor_pressure_mean": {
+        "type": "float"
+      },
+      "azmet_dewpoint_mean": {
+        "type": "float"
       }
     }
   }
