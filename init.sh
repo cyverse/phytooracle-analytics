@@ -4,8 +4,8 @@ set -e
 # If the configuration file does not exist, start the Streamlit configuration app.
 if [ ! -f /app/config.json ]; then
     echo "Configuration file not found. Launching configuration UI..."
-    # Start the Streamlit app in the background.
-    streamlit run app/params_app.py &
+    # Start the Streamlit app in the background on a different CPU core
+    taskset -c 1 streamlit run app/params_app.py &
     STREAMLIT_PID=$!
     
     # Wait until the config file is created.
