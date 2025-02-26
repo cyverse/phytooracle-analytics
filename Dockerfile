@@ -67,66 +67,6 @@ RUN mkdir -p /app/opensearch-2.19.0/config/certs && \
     echo "plugins.security.ssl.transport.enabled: false" >> /app/opensearch-2.19.0/config/opensearch.yml && \
     chown -R opensearch:opensearch /app/opensearch-2.19.0/config
 
-# Script to wait for OpenSearch and initialize everything
-COPY <<'EOF' /app/init.sh
-#!/bin/bash
-set -e
-
-# Create .env file using runtime environment variables
-echo "ELASTIC_HOST=${ELASTIC_HOST:-localhost}
-ELASTIC_PORT=${ELASTIC_PORT:-9200}
-ELASTIC_USER=${ELASTIC_USER:-admin}
-ELASTIC_PASSWORD=${ELASTIC_PASSWORD}" > .env
-
-# Set up iRODS environment file
-echo "{
-    \"irods_host\": \"${IRODS_HOST:-data.cyverse.org}\",
-    \"irods_port\": ${IRODS_PORT:-1247},
-    \"irods_user_name\": \"${IRODS_USER:-tanmayagrawal21}\",
-    \"irods_zone_name\": \"${IRODS_ZONE:-iplant}\",
-    \"irods_home\": \"/${IRODS_ZONE:-iplant}/home/${IRODS_USER}\"
-}" > /root/.irods/irods_environment.json
-
-# Create iRODS authentication file
-echo "${IRODS_PASSWORD}" | iinit
-
-# Function to wait for OpenSearch
-wait_for_opensearch() {
-    echo "Waiting for OpenSearch..."
-    while ! curl -s "http://localhost:9200" > /dev/null; do
-        sleep 1
-    done
-    echo "OpenSearch is ready!"
-}
-
-# Start OpenSearch as opensearch user in the background
-su opensearch -c "./opensearch-2.19.0/bin/opensearch" &
-
-# Wait for it to be ready
-wait_for_opensearch
-
-# Run data preparation scripts
-echo "Preparing data..."
-# Season 11
-python3 data_preparation/scanner3D.py "/iplant/home/shared/phytooracle/season_11_sorghum_yr_2020/Gantry_fieldbook_Aug-2020_Revised_Irr_TRT.csv" "/iplant/home/shared/phytooracle/season_11_sorghum_yr_2020/level_2/scanner3DTop/"
-python3 data_preparation/flirIRCamera.py "/iplant/home/shared/phytooracle/season_11_sorghum_yr_2020/level_3/flirIrCamera/s11_clustered_flir_identifications.csv"
-python3 data_preparation/stereoTop.py "/iplant/home/shared/phytooracle/season_11_sorghum_yr_2020/level_3/stereoTop/season_11_clustering.csv"
-
-# Season 14
-python3 data_preparation/scanner3D.py "/iplant/home/shared/phytooracle/season_14_sorghum_yr_2022/North_gantry_fieldbook_2022_replants.csv" "/iplant/home/shared/phytooracle/season_14_sorghum_yr_2022/level_2/scanner3DTop/sorghum/"
-python3 data_preparation/drone.py "/iplant/home/shared/phytooracle/season_14_sorghum_yr_2022/level_2/drone/sorghum/"
-python3 data_preparation/flirIRCamera.py "/iplant/home/shared/phytooracle/season_14_sorghum_yr_2022/level_2/flirIrCamera/season_14_clustering_flir.csv"
-python3 data_preparation/stereoTop.py "/iplant/home/shared/phytooracle/season_14_sorghum_yr_2022/level_2/stereoTop/season_14_clustering.csv"
-
-
-# Upload data to OpenSearch
-echo "Uploading data to OpenSearch..."
-python3 search_configuration/upload_data.py
-
-# Start the frontend
-echo "Starting frontend..."
-streamlit run app/main.py --server.address 0.0.0.0
-EOF
 
 RUN chmod +x /app/init.sh && \
     # Ensure proper permissions for OpenSearch directories
