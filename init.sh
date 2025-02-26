@@ -5,7 +5,7 @@ set -e
 if [ ! -f /app/config.json ]; then
     echo "Configuration file not found. Launching configuration UI..."
     # Start the Streamlit app in the background on a different CPU core
-    taskset -c 1 streamlit run app/params_app.py &
+    taskset -c 1 streamlit run app/params_app.py --server.address 0.0.0.0 --server.enableCORS false --server.enableXsrfProtection false &
     STREAMLIT_PID=$!
     
     # Wait until the config file is created.
@@ -77,4 +77,4 @@ echo "Uploading data to OpenSearch..."
 python3 search_configuration/upload_data.py
 
 echo "Starting frontend..."
-streamlit run app/main.py --server.address 0.0.0.0
+streamlit run app/main.py --server.address 0.0.0.0 --server.enableCORS false --server.enableXsrfProtection false
