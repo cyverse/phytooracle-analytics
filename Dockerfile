@@ -52,28 +52,35 @@ COPY . .
 # Create necessary directories
 RUN mkdir -p output
 
-# Set up OpenSearch 2.19.0
-RUN curl -L -O https://artifacts.opensearch.org/releases/bundle/opensearch/2.19.0/opensearch-2.19.0-linux-x64.tar.gz \
-    && tar -xzf opensearch-2.19.0-linux-x64.tar.gz \
-    && rm opensearch-2.19.0-linux-x64.tar.gz \
-    && chown -R opensearch:opensearch opensearch-2.19.0
+# Set up OpenSearch 2.17.0
+RUN curl -L -O https://artifacts.opensearch.org/releases/bundle/opensearch/2.17.0/opensearch-2.17.0-linux-x64.tar.gz \
+    && tar -xzf opensearch-2.17.0-linux-x64.tar.gz \
+    && rm opensearch-2.17.0-linux-x64.tar.gz \
+    && chown -R opensearch:opensearch opensearch-2.17.0
 
 # Configure OpenSearch
-RUN mkdir -p /app/opensearch-2.19.0/config/certs && \
-    echo "plugins.security.ssl.http.enabled: false" >> /app/opensearch-2.19.0/config/opensearch.yml && \
-    echo "plugins.security.disabled: true" >> /app/opensearch-2.19.0/config/opensearch.yml && \
-    echo "network.host: 0.0.0.0" >> /app/opensearch-2.19.0/config/opensearch.yml && \
-    echo "discovery.type: single-node" >> /app/opensearch-2.19.0/config/opensearch.yml && \
-    echo "plugins.security.ssl.transport.enabled: false" >> /app/opensearch-2.19.0/config/opensearch.yml && \
-    chown -R opensearch:opensearch /app/opensearch-2.19.0/config
+RUN mkdir -p /app/opensearch-2.17.0/config/certs && \
+    echo "plugins.security.ssl.http.enabled: false" >> /app/opensearch-2.17.0/config/opensearch.yml && \
+    echo "plugins.security.disabled: true" >> /app/opensearch-2.17.0/config/opensearch.yml && \
+    echo "network.host: 0.0.0.0" >> /app/opensearch-2.17.0/config/opensearch.yml && \
+    echo "discovery.type: single-node" >> /app/opensearch-2.17.0/config/opensearch.yml && \
+    echo "plugins.security.ssl.transport.enabled: false" >> /app/opensearch-2.17.0/config/opensearch.yml && \
+    echo "action.auto_create_index: true" >> /app/opensearch-2.17.0/config/opensearch.yml && \
+    echo "cluster.blocks.read_only: false" >> /app/opensearch-2.17.0/config/opensearch.yml && \
+    chown -R opensearch:opensearch /app/opensearch-2.17.0/config
 
+# # Configure JVM memory settings for OpenSearch
+# RUN mkdir -p /app/opensearch-2.17.0/config/jvm.options.d && \
+#     echo "-Xms4g" > /app/opensearch-2.17.0/config/jvm.options.d/memory.options && \
+#     echo "-Xmx4g" >> /app/opensearch-2.17.0/config/jvm.options.d/memory.options && \
+#     chown -R opensearch:opensearch /app/opensearch-2.17.0/config/jvm.options.d
 
 RUN chmod +x /app/init.sh && \
     # Ensure proper permissions for OpenSearch directories
-    mkdir -p /app/opensearch-2.19.0/logs && \
-    mkdir -p /app/opensearch-2.19.0/data && \
-    chown -R opensearch:opensearch /app/opensearch-2.19.0 && \
-    chmod -R 755 /app/opensearch-2.19.0
+    mkdir -p /app/opensearch-2.17.0/logs && \
+    mkdir -p /app/opensearch-2.17.0/data && \
+    chown -R opensearch:opensearch /app/opensearch-2.17.0 && \
+    chmod -R 755 /app/opensearch-2.17.0
 
 # Expose ports for OpenSearch and Streamlit
 EXPOSE 9200 8400 8501

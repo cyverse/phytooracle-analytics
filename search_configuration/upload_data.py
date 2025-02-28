@@ -34,6 +34,7 @@ host = os.getenv("ELASTIC_HOST")
 port = os.getenv("ELASTIC_PORT")
 auth = (os.getenv("ELASTIC_USER"), os.getenv("ELASTIC_PASSWORD"))
 
+print(host, port, auth)
 # Check if the index exists, if not create it
 client = OpenSearch(
     hosts=[{'host': host, 'port': port, 'scheme': 'http'}],
@@ -47,6 +48,7 @@ client = OpenSearch(
 )
 
 index_name = "phytooracle-index"
+
 
 if not client.indices.exists(index=index_name):
     print(f"The index '{index_name}' does not exist. Creating the index.")
