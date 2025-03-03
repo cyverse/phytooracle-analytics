@@ -58,9 +58,10 @@ if not client.indices.exists(index=index_name):
 
 print(paths)
 for data_path in paths:
+    print("Processing", data_path)
     with open(data_path, 'r') as file:
         data = json.load(file)
-        
+        print("Found data:", len(data))
         # Enrich data with AZMET weather data
         # "data" contains a field called scan_date
         # azmet data, found in azmet_output/ directory, is filtered by year, so all weather data from year 2020 is in azmet_output/2020.json
@@ -103,6 +104,8 @@ for data_path in paths:
         #         print(f"Could not convert {entry['scan_date']} to a datetime object.")
         #         continue
     # Convert data for bulk indexing
+
+    print(f"Linked data from file {data_path} to AZMET data.")
     actions = [
         {
             "_index": index_name,
@@ -121,4 +124,4 @@ for data_path in paths:
     except Exception as e:
         print(f"An error occurred while indexing the data: {e}")
         # Print the error in detail
-        print(e.info)
+        print(e)

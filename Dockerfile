@@ -69,11 +69,11 @@ RUN mkdir -p /app/opensearch-2.17.0/config/certs && \
     echo "cluster.blocks.read_only: false" >> /app/opensearch-2.17.0/config/opensearch.yml && \
     chown -R opensearch:opensearch /app/opensearch-2.17.0/config
 
-# # Configure JVM memory settings for OpenSearch
-# RUN mkdir -p /app/opensearch-2.17.0/config/jvm.options.d && \
-#     echo "-Xms4g" > /app/opensearch-2.17.0/config/jvm.options.d/memory.options && \
-#     echo "-Xmx4g" >> /app/opensearch-2.17.0/config/jvm.options.d/memory.options && \
-#     chown -R opensearch:opensearch /app/opensearch-2.17.0/config/jvm.options.d
+# Configure JVM memory settings for OpenSearch
+RUN mkdir -p /app/opensearch-2.17.0/config/jvm.options.d && \
+    echo "-Xms4g" > /app/opensearch-2.17.0/config/jvm.options.d/memory.options && \
+    echo "-Xmx4g" >> /app/opensearch-2.17.0/config/jvm.options.d/memory.options && \
+    chown -R opensearch:opensearch /app/opensearch-2.17.0/config/jvm.options.d
 
 RUN chmod +x /app/init.sh && \
     # Ensure proper permissions for OpenSearch directories

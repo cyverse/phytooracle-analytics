@@ -4,7 +4,13 @@ set -e
 CONFIG_FILE="/app/config.json"
 LOG_FILE="/app/progress.log"
 
+
+# echo an environment variable that is a flag for whether deployment is in progress
+export DEPLOYMENT_IN_PROGRESS=True
+
+
 # If the configuration file does not exist, launch the configuration UI.
+
 if [ ! -f "$CONFIG_FILE" ]; then
     echo "Configuration file not found. Launching configuration UI..."
     # Start the Streamlit params app on CPU core 1.
@@ -60,7 +66,7 @@ wait_for_opensearch() {
 
 # Start OpenSearch as the opensearch user in the background.
 echo "Starting OpenSearch..."
-su opensearch -c "./opensearch-2.17.0/bin/opensearch" &
+su opensearch -c "./opensearch-2.17.0/bin/opensearch" > /app/opensearch_output.log 2>&1 &
 OPENSEARCH_PID=$!
 
 # Wait for OpenSearch to be ready.
@@ -75,18 +81,22 @@ wait_for_opensearch
 # # Run data preparation scripts for Season 14.
 # echo "Preparing Season 14 data..."
 # python3 data_preparation/scanner3D.py "/iplant/home/shared/phytooracle/season_14_sorghum_yr_2022/North_gantry_fieldbook_2022_replants.csv" "/iplant/home/shared/phytooracle/season_14_sorghum_yr_2022/level_2/scanner3DTop/sorghum/"
-python3 data_preparation/drone.py "/iplant/home/shared/phytooracle/season_14_sorghum_yr_2022/level_2/drone/sorghum/"
+# python3 data_preparation/drone.py "/iplant/home/shared/phytooracle/season_14_sorghum_yr_2022/level_2/drone/sorghum/"
 # python3 data_preparation/flirIRCamera.py "/iplant/home/shared/phytooracle/season_14_sorghum_yr_2022/level_2/flirIrCamera/season_14_clustering_flir.csv"
 # python3 data_preparation/stereoTop.py "/iplant/home/shared/phytooracle/season_14_sorghum_yr_2022/level_2/stereoTop/season_14_clustering.csv"
 
 echo "Uploading data to OpenSearch..."
 python3 search_configuration/upload_data.py
 
-# Just before starting the main app, shut down the params app if it is still running.
-if ps -p $STREAMLIT_PID > /dev/null 2>&1; then
-    echo "Closing configuration UI..."
-    kill $STREAMLIT_PID
-fi
+echo "Data upload complete!"
+# Change the deployment flag to false.
+export "DEPLOYMENT_IN_PROGRESS=false"
 
-echo "Starting main frontend app..."
-streamlit run app/main.py --server.address 0.0.0.0 --server.enableCORS false --server.enableXsrfProtection false
+# # Just before starting the main app, shut down the params app if it is still running.
+# if ps -p $STREAMLIT_PID > /dev/null 2>&1; then
+#     echo "Closing configuration UI..."
+#     kill $STREAMLIT_PID
+# fi
+
+# echo "Starting main frontend app..."
+# streamlit run app/main.py --server.address 0.0.0.0 --server.enableCORS false --server.enableXsrfProtection false
