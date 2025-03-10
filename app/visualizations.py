@@ -505,9 +505,9 @@ def visualize_parameters(client, index_name, query, get_all_columns_func):
 
 def compare_axis(client, index_name, query, get_all_columns_func):
     """
-    Compare the values of two columns over time.
+    Compare the values of multiple columns.
     """
-    st.subheader("Compare the values of two columns over time")
+    st.subheader("Compare and analyze trends in values of multiple columns")
     
     # Build a list of visualizable columns and extend with any azmet_ columns found.
     visualizable_columns = ['roi_temp', 'bounding_area_m2', 'mean_tgi', 'q1_tgi', 'q3_tgi']
