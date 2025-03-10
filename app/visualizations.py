@@ -522,6 +522,13 @@ def compare_axis(client, index_name, query, get_all_columns_func):
         default=[visualizable_columns[0], visualizable_columns[1]]
     )
 
+    if len(selected_columns) < 2:
+        st.warning("Please select at least two columns to compare.")
+        return
+
+    # Ask user to select the visualization type - scatterplot matrix or parallel coordinates plot
+    plot_type = st.selectbox('Select the visualization type', ['Scatterplot Matrix', 'Parallel Coordinates Plot'])
+
     # Ensure the query uses the selected columns.
     query['aggs'] = {
         "by_scan_date": {
@@ -553,43 +560,115 @@ def compare_axis(client, index_name, query, get_all_columns_func):
     # filter data by columns where both columns have values
     df = df.dropna(subset=selected_columns)
 
-
     # Convert the year to integer to avoid fractional years in the color legend
     df['year'] = df['year'].astype(int)
     # st.write(df)
 
-    # make a scale mappiong the year to a color
-    color_scale = px.colors.qualitative.Set1
-    color_map = {str(year): color for year, color in zip(df['year'].unique(), color_scale)}
-    
-    # Build a line plot matrix comparing the columns (year can just be a color legend)
-    fig = px.scatter_matrix(df, dimensions=selected_columns, color='year', color_discrete_map=color_map)
-    
+    if plot_type == 'Scatterplot Matrix':
+        # make a scale mapping the year to a color
+        color_scale = px.colors.qualitative.Set1
+        color_map = {str(year): color for year, color in zip(df['year'].unique(), color_scale)}
+        
+        # Build a line plot matrix comparing the columns (year can just be a color legend)
+        fig = px.scatter_matrix(df, dimensions=selected_columns, color='year', color_discrete_map=color_map)
+        
+        # make the figure a bit larger, proportional to the number of columns
+        fig.update_layout(width=400 + 100 * len(selected_columns), height=400 + 100 * len(selected_columns))
+        # Ensure the color legend is discrete
+        fig.update_traces(marker=dict(size=5))
+        fig.update_layout(coloraxis_colorbar=dict(
+            title="Year",
+            tickvals=list(color_map.keys()),
+            ticktext=list(color_map.keys())
+        ))
 
+        st.plotly_chart(fig, config={'displayModeBar': False})
+        st.markdown(
+            """
+            <style>
+            .element-container {
+                display: flex;
+                justify-content: center;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True
+        )
 
-    # make the figure a bit larger, proportional to the number of columns
-    fig.update_layout(width=400 + 100 * len(selected_columns), height=400 + 100 * len(selected_columns))
-    # Ensure the color legend is discrete
-    fig.update_traces(marker=dict(size=5))
-    fig.update_layout(coloraxis_colorbar=dict(
-        title="Year",
-        tickvals=list(color_map.keys()),
-        ticktext=list(color_map.keys())
-    ))
+    else:
+        # For parallel coordinates, include year as one of the dimensions
+        dimensions = ['year'] + selected_columns
+        
+        # Create an empty container for the plot
+        plot_container = st.empty()
+        
+        # Initialize the session state for color dimension if it doesn't exist
+        if 'color_dimension' not in st.session_state:
+            st.session_state.color_dimension = 'year'
+        
+        # Add a row for displaying the current coloring dimension
+        st.markdown(f"**Currently coloring by:** {st.session_state.color_dimension}")
+        
+        # Create column buttons for dimension selection
+        st.markdown("**Click to color by:**")
+        cols = st.columns(len(dimensions))
+        
+ 
+        # Create buttons for each dimension to allow switching the color dimension
+        for i, dim in enumerate(dimensions):
+            if cols[i].button(dim, key=f"color_by_{dim}"):
+                st.session_state.color_dimension = dim
+                st.rerun()
 
+        # Get the current coloring dimension
+        color_dim = st.session_state.color_dimension
+        if color_dim not in dimensions:
+            color_dim = dimensions[0]
 
-
-
-    st.plotly_chart(fig, config={'displayModeBar': False})
-    st.markdown(
-        """
-        <style>
-        .element-container {
-            display: flex;
-            justify-content: center;
-        }
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
-
+        # Build a parallel coordinates plot including year as the first axis
+        # and color according to the selected dimension
+        fig = px.parallel_coordinates(
+            df, 
+            dimensions=dimensions,
+            color=color_dim,
+            color_continuous_scale=px.colors.sequential.Viridis if color_dim != 'year' else px.colors.qualitative.Set1
+        )
+        
+        # Update layout to provide better interaction and increase margin between title and plot
+        fig.update_layout(
+            width=800, 
+            height=400,
+            # Add tooltips for better UX
+            hovermode='closest',
+            # Add note about interaction in the title and increase top margin
+            margin=dict(t=80, b=20, l=50, r=50),  # Increased top margin to prevent overlap
+            title={
+                'text': f'Parallel Coordinates Plot (Colored by {color_dim})',
+                'y':0.98,  # Moved title position up
+                'x':0.5,
+                'xanchor': 'center',
+                'yanchor': 'top'
+            }
+        )
+        
+        # Update the plot
+        plot_container.plotly_chart(fig, config={'displayModeBar': True})
+        
+        # Add explanatory text about the interactions
+        st.markdown("""
+        **Interactions with Parallel Coordinates Plot:**
+        - **Drag the axis labels** to reorder the axes.
+        - **Click on the buttons below the plot** to color by different dimensions.
+        """)
+        
+        st.markdown(
+            """
+            <style>
+            .element-container {
+                display: flex;
+                justify-content: center;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True
+        )
