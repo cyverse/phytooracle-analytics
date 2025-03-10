@@ -55,6 +55,14 @@ if not client.indices.exists(index=index_name):
     # Load the index mapping from a file
     with open("search_configuration/index_mapping.json", "r") as file:
         client.indices.create(index=index_name, body=json.load(file))
+        
+        
+# Load AZMET data for 2020, 2021, 2022 in a single dictionary
+azmet_data = {}
+for year in range(2020, 2023):
+    with open(f"azmet_output/{year}.json", 'r') as azmet_file:
+        azmet_data[year] = {entry["day_of_year"]: entry for entry in json.load(azmet_file)}
+# print(azmet_data)
 
 print(paths)
 for data_path in paths:
@@ -69,14 +77,6 @@ for data_path in paths:
         # azmet data is in the format: {year: year, day_of_year: day_of_year....}
         # We need to convert the scan_date to a datetime object, extract the year and day_of_year, and then find the corresponding weather data in the azmet data
         # and then add the weather data to the "data" object
-        
-
-        # Load AZMET data for 2020, 2021, 2022 in a single dictionary
-        azmet_data = {}
-        for year in range(2020, 2023):
-            with open(f"azmet_output/{year}.json", 'r') as azmet_file:
-                azmet_data[year] = {entry["day_of_year"]: entry for entry in json.load(azmet_file)}
-        # print(azmet_data)
 
         for entry in data:
             try:

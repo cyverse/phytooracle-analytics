@@ -5,9 +5,6 @@ CONFIG_FILE="/app/config.json"
 LOG_FILE="/app/progress.log"
 
 
-# echo an environment variable that is a flag for whether deployment is in progress
-export DEPLOYMENT_IN_PROGRESS=True
-
 
 # If the configuration file does not exist, launch the configuration UI.
 
@@ -26,12 +23,13 @@ if [ ! -f "$CONFIG_FILE" ]; then
 fi
 
 # Redirect all subsequent output to a log file (and to stdout) so the params app can display progress.
-exec > >(tee -a "$LOG_FILE") 2>&1
+exec > >(stdbuf -oL tee -a "$LOG_FILE") 2>&1
 
 # Read configuration values from the JSON file.
 IRODS_USER=$(python3 -c "import json; print(json.load(open('$CONFIG_FILE'))['IRODS_USER'])")
 IRODS_PASSWORD=$(python3 -c "import json; print(json.load(open('$CONFIG_FILE'))['IRODS_PASSWORD'])")
 ELASTIC_PASSWORD=$(python3 -c "import json; print(json.load(open('$CONFIG_FILE'))['ELASTIC_PASSWORD'])")
+UPDATE_DATA=$(python3 -c "import json; print(json.load(open('$CONFIG_FILE'))['UPDATE_DATA'])")
 
 # Create .env file using the configuration values.
 echo "Creating .env file..."
@@ -72,25 +70,31 @@ OPENSEARCH_PID=$!
 # Wait for OpenSearch to be ready.
 wait_for_opensearch
 
-# # Run data preparation scripts for Season 11.
-# echo "Preparing Season 11 data..."
-# python3 data_preparation/scanner3D.py "/iplant/home/shared/phytooracle/season_11_sorghum_yr_2020/Gantry_fieldbook_Aug-2020_Revised_Irr_TRT.csv" "/iplant/home/shared/phytooracle/season_11_sorghum_yr_2020/level_2/scanner3DTop/"
-# python3 data_preparation/flirIRCamera.py "/iplant/home/shared/phytooracle/season_11_sorghum_yr_2020/level_3/flirIrCamera/s11_clustered_flir_identifications.csv"
-# python3 data_preparation/stereoTop.py "/iplant/home/shared/phytooracle/season_11_sorghum_yr_2020/level_3/stereoTop/season_11_clustering.csv"
+# Check if data update is required.
+if [ "${UPDATE_DATA,,}" == "true" ]; then
+    # Run data preparation scripts for Season 11.
+    echo "Preparing Season 11 data..."
+    python3 data_preparation/scanner3D.py "/iplant/home/shared/phytooracle/season_11_sorghum_yr_2020/Gantry_fieldbook_Aug-2020_Revised_Irr_TRT.csv" "/iplant/home/shared/phytooracle/season_11_sorghum_yr_2020/level_2/scanner3DTop/"
+    python3 data_preparation/flirIRCamera.py "/iplant/home/shared/phytooracle/season_11_sorghum_yr_2020/level_3/flirIrCamera/s11_clustered_flir_identifications.csv"
+    python3 data_preparation/stereoTop.py "/iplant/home/shared/phytooracle/season_11_sorghum_yr_2020/level_3/stereoTop/season_11_clustering.csv"
 
-# # Run data preparation scripts for Season 14.
-# echo "Preparing Season 14 data..."
-# python3 data_preparation/scanner3D.py "/iplant/home/shared/phytooracle/season_14_sorghum_yr_2022/North_gantry_fieldbook_2022_replants.csv" "/iplant/home/shared/phytooracle/season_14_sorghum_yr_2022/level_2/scanner3DTop/sorghum/"
-# python3 data_preparation/drone.py "/iplant/home/shared/phytooracle/season_14_sorghum_yr_2022/level_2/drone/sorghum/"
-# python3 data_preparation/flirIRCamera.py "/iplant/home/shared/phytooracle/season_14_sorghum_yr_2022/level_2/flirIrCamera/season_14_clustering_flir.csv"
-# python3 data_preparation/stereoTop.py "/iplant/home/shared/phytooracle/season_14_sorghum_yr_2022/level_2/stereoTop/season_14_clustering.csv"
+    # Run data preparation scripts for Season 14.
+    echo "Preparing Season 14 data..."
+    python3 data_preparation/scanner3D.py "/iplant/home/shared/phytooracle/season_14_sorghum_yr_2022/North_gantry_fieldbook_2022_replants.csv" "/iplant/home/shared/phytooracle/season_14_sorghum_yr_2022/level_2/scanner3DTop/sorghum/"
+    python3 data_preparation/drone.py "/iplant/home/shared/phytooracle/season_14_sorghum_yr_2022/level_2/drone/sorghum/"
+    python3 data_preparation/flirIRCamera.py "/iplant/home/shared/phytooracle/season_14_sorghum_yr_2022/level_2/flirIrCamera/season_14_clustering_flir.csv"
+    python3 data_preparation/stereoTop.py "/iplant/home/shared/phytooracle/season_14_sorghum_yr_2022/level_2/stereoTop/season_14_clustering.csv"
+    
+    echo "Data preparation complete!"
+    
+fi
 
 echo "Uploading data to OpenSearch..."
 python3 search_configuration/upload_data.py
 
 echo "Data upload complete!"
-# Change the deployment flag to false.
-export "DEPLOYMENT_IN_PROGRESS=false"
+echo "term_loop"
+
 
 # # Just before starting the main app, shut down the params app if it is still running.
 # if ps -p $STREAMLIT_PID > /dev/null 2>&1; then
@@ -100,3 +104,6 @@ export "DEPLOYMENT_IN_PROGRESS=false"
 
 # echo "Starting main frontend app..."
 # streamlit run app/main.py --server.address 0.0.0.0 --server.enableCORS false --server.enableXsrfProtection false
+
+# Wait for all background processes to finish.
+wait

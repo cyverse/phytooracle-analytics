@@ -503,177 +503,93 @@ def visualize_parameters(client, index_name, query, get_all_columns_func):
     
     st.plotly_chart(fig)
 
+def compare_axis(client, index_name, query, get_all_columns_func):
+    """
+    Compare the values of two columns over time.
+    """
+    st.subheader("Compare the values of two columns over time")
+    
+    # Build a list of visualizable columns and extend with any azmet_ columns found.
+    visualizable_columns = ['roi_temp', 'bounding_area_m2', 'mean_tgi', 'q1_tgi', 'q3_tgi']
+    all_columns = get_all_columns_func(client, index_name)
+    azmet_columns = [col for col in all_columns if col.startswith('azmet_')]
+    visualizable_columns.extend(azmet_columns)
+    
+    # Use a multiselect so the user can pick one or more columns.
+    selected_columns = st.multiselect(
+        'Select the columns to visualize', 
+        visualizable_columns,
+        default=[visualizable_columns[0], visualizable_columns[1]]
+    )
 
-# def visualize_parameters(client, index_name, query, get_all_columns_func):
-#     """
-#     Visualize the value of a specific parameter over time including statistics.
-#     """
-#     st.subheader("Visualize aggregated parameters over time")
+    # Ensure the query uses the selected columns.
+    query['aggs'] = {
+        "by_scan_date": {
+            "date_histogram": {
+                "field": "scan_date",
+                "calendar_interval": "day",
+                "format": "yyyy-MM-dd"
+            },
+            "aggs": {}
+        }
+    }
+    for col in selected_columns:
+        query['aggs']['by_scan_date']['aggs'][col] = {"avg": {"field": col}}
     
-#     # Build a list of visualizable columns and extend with any azmet_ columns found
-#     visualizable_columns = ['roi_temp', 'bounding_area_m2', 'mean_tgi', 'q1_tgi', 'q3_tgi', 'box axis']
-#     all_columns = get_all_columns_func(client, index_name)
-#     azmet_columns = [col for col in all_columns if col.startswith('azmet_')]
-#     visualizable_columns.extend(azmet_columns)
+    query["size"] = 0
+    response = client.search(index=index_name, body=query)
     
-#     cols_to_vis = st.selectbox('Select the columns to visualize', visualizable_columns)
-#     if cols_to_vis == 'box axis':
-#         graph_options = ['Map']
-#     else:
-#         graph_options = ['Line', 'Box&Whisker', 'Scatter']
-#     graph_type = st.selectbox('Select the graph type', graph_options)
-#     year = st.selectbox('Select the year', ['2022', '2021', '2020', '2019', '2018'])
-#     crop = st.multiselect('Select the crop type  (optional)', ['sorghum', 'lettuce', 'maize'])
+    data = []
     
-#     # Add filters to the query
-#     query['query']['bool']['must'].append({"term": {"year": year}})
-#     if crop:
-#         query['query']['bool']['must'].append({"terms": {"crop_type": crop}})
+    for bucket in response['aggregations']['by_scan_date']['buckets']:
+        row = {'scan_date': bucket['key_as_string']}
+        for col in selected_columns:
+            row[col] = bucket[col]['value']
+        data.append(row)
     
-#     if cols_to_vis == 'box axis':
-#         # Ensure that coordinate fields exist using the new names
-#         query['query']['bool']['must'].append({"exists": {"field": "nw_lat"}})
-#         query['query']['bool']['must'].append({"exists": {"field": "nw_lon"}})
-#         query['query']['bool']['must'].append({"exists": {"field": "se_lat"}})
-#         query['query']['bool']['must'].append({"exists": {"field": "se_lon"}})
-#         query['aggs'] = {
-#             "by_scan_date": {
-#                 "date_histogram": {
-#                     "field": "scan_date",
-#                     "calendar_interval": "day",
-#                     "format": "yyyy-MM-dd"
-#                 },
-#                 "aggs": {
-#                     "box_axis": {
-#                         "top_hits": {
-#                             "_source": {"includes": ["nw_lat", "nw_lon", "se_lat", "se_lon"]},
-#                             "size": 100
-#                         }
-#                     }
-#                 }
-#             }
-#         }
-#     elif cols_to_vis.startswith('azmet_'):
-#         query['aggs'] = {
-#             "by_scan_date": {
-#                 "date_histogram": {
-#                     "field": "scan_date",
-#                     "calendar_interval": "day",
-#                     "format": "yyyy-MM-dd"
-#                 },
-#                 "aggs": {
-#                     "value": {
-#                         "top_hits": {
-#                             "_source": {"includes": [cols_to_vis]},
-#                             "size": 1
-#                         }
-#                     }
-#                 }
-#             }
-#         }
-#         query["size"] = 0
-#     else:
-#         query['aggs'] = {
-#             "by_scan_date": {
-#                 "date_histogram": {
-#                     "field": "scan_date",
-#                     "calendar_interval": "day",
-#                     "format": "yyyy-MM-dd"
-#                 },
-#                 "aggs": {
-#                     "mean": {"avg": {"field": cols_to_vis}},
-#                     "median": {"percentiles": {"field": cols_to_vis, "percents": [50]}},
-#                     "max": {"max": {"field": cols_to_vis}},
-#                     "min": {"min": {"field": cols_to_vis}}
-#                 }
-#             }
-#         }
-#         query["size"] = 0
+    df = pd.DataFrame(data)
+    df['year'] = pd.to_datetime(df['scan_date']).dt.year
 
-#     response = client.search(index=index_name, body=query)
-#     data = []
+    # filter data by columns where both columns have values
+    df = df.dropna(subset=selected_columns)
 
-#     if cols_to_vis == 'box axis':
-#         for bucket in response['aggregations']['by_scan_date']['buckets']:
-#             row = {'scan_date': bucket['key_as_string'], 'boxes': []}
-#             for hit in bucket['box_axis']['hits']['hits']:
-#                 row['boxes'].append(hit['_source'])
-#             data.append(row)
-#     elif cols_to_vis.startswith('azmet_'):
-#         for bucket in response['aggregations']['by_scan_date']['buckets']:
-#             row = {'scan_date': bucket['key_as_string']}
-#             hits = bucket['value']['hits']['hits']
-#             if hits:
-#                 row[cols_to_vis] = hits[0]['_source'][cols_to_vis]
-#             data.append(row)
-#     else:
-#         for bucket in response['aggregations']['by_scan_date']['buckets']:
-#             row = {
-#                 'scan_date': bucket['key_as_string'],
-#                 'mean': bucket['mean']['value'],
-#                 'median': bucket['median']['values']['50.0'],
-#                 'max': bucket['max']['value'],
-#                 'min': bucket['min']['value']
-#             }
-#             data.append(row)
+
+    # Convert the year to integer to avoid fractional years in the color legend
+    df['year'] = df['year'].astype(int)
+    # st.write(df)
+
+    # make a scale mappiong the year to a color
+    color_scale = px.colors.qualitative.Set1
+    color_map = {str(year): color for year, color in zip(df['year'].unique(), color_scale)}
     
-#     df = pd.DataFrame(data)
-#     # st.write(df)
-#     df = df.dropna()
-
-#     if cols_to_vis == 'box axis':
-#         y_values = ['boxes']
-#     elif cols_to_vis.startswith('azmet_'):
-#         y_values = [cols_to_vis]
-#     else:
-#         y_values = ['mean', 'median', 'max', 'min']
-
-#     if graph_type == 'Map':
-#         date_choice = st.selectbox(
-#             'Select a date to visualize the boxes',
-#             df[df['boxes'].apply(lambda x: len(x) > 0)]['scan_date'].unique()
-#         )
-#         df = df[df['scan_date'] == date_choice]
-#         df_exploded = df.explode('boxes')
-#         # Retrieve the new coordinate fields from the box data
-#         df_exploded['nw_lat'] = df_exploded['boxes'].apply(lambda x: x.get('nw_lat') if isinstance(x, dict) else None)
-#         df_exploded['nw_lon'] = df_exploded['boxes'].apply(lambda x: x.get('nw_lon') if isinstance(x, dict) else None)
-#         df_exploded['se_lat'] = df_exploded['boxes'].apply(lambda x: x.get('se_lat') if isinstance(x, dict) else None)
-#         df_exploded['se_lon'] = df_exploded['boxes'].apply(lambda x: x.get('se_lon') if isinstance(x, dict) else None)
-#         df_exploded = df_exploded.dropna(subset=['nw_lat', 'nw_lon', 'se_lat', 'se_lon'])
-        
-#         fig = go.Figure()
-#         for _, row in df_exploded.iterrows():
-#             # Assuming nw_lat/nw_lon represents the top-left corner and se_lat/se_lon the bottom-right,
-#             # set the rectangle such that:
-#             # x0 = nw_lon (west), y0 = se_lat (south), x1 = se_lon (east), y1 = nw_lat (north)
-#             fig.add_shape(
-#                 type="rect",
-#                 x0=row['nw_lon'],
-#                 y0=row['se_lat'],
-#                 x1=row['se_lon'],
-#                 y1=row['nw_lat'],
-#                 line=dict(color="RoyalBlue"),
-#                 fillcolor="LightSkyBlue",
-#                 opacity=0.5,
-#             )
-#         fig.update_layout(
-#             title=f"Boxes on {date_choice}",
-#             xaxis_title="Longitude",
-#             yaxis_title="Latitude",
-#             xaxis=dict(scaleanchor="y", scaleratio=1),
-#             yaxis=dict(constrain='domain'),
-#             showlegend=False,
-#             autosize=True,
-#             height=800,
-#         )
-#         fig.update_xaxes(range=[df_exploded['nw_lon'].min(), df_exploded['se_lon'].max()])
-#         fig.update_yaxes(range=[df_exploded['se_lat'].min(), df_exploded['nw_lat'].max()])
-#     elif graph_type == 'Line':
-#         fig = px.line(df, x='scan_date', y=y_values, title='Value of parameters over time')
-#     elif graph_type == 'Box&Whisker':
-#         fig = px.box(df, x='scan_date', y=y_values, title='Value of parameters over time')
-#     else:
-#         fig = px.scatter(df, x='scan_date', y=y_values, title='Value of parameters over time')
+    # Build a line plot matrix comparing the columns (year can just be a color legend)
+    fig = px.scatter_matrix(df, dimensions=selected_columns, color='year', color_discrete_map=color_map)
     
-#     st.plotly_chart(fig)
+
+
+    # make the figure a bit larger, proportional to the number of columns
+    fig.update_layout(width=400 + 100 * len(selected_columns), height=400 + 100 * len(selected_columns))
+    # Ensure the color legend is discrete
+    fig.update_traces(marker=dict(size=5))
+    fig.update_layout(coloraxis_colorbar=dict(
+        title="Year",
+        tickvals=list(color_map.keys()),
+        ticktext=list(color_map.keys())
+    ))
+
+
+
+
+    st.plotly_chart(fig, config={'displayModeBar': False})
+    st.markdown(
+        """
+        <style>
+        .element-container {
+            display: flex;
+            justify-content: center;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+

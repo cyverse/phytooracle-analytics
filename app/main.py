@@ -9,7 +9,8 @@ from visualizations import (
     get_vis,
     get_comparison_vis,
     # get_vis_over_time,  # Uncomment if you want to include this visualization.
-    visualize_parameters
+    visualize_parameters,
+    compare_axis
 )
 
 def app():
@@ -17,7 +18,7 @@ def app():
     if 'first_time' not in st.session_state:
         st.session_state.first_time = True
 
-    st.set_page_config(page_title="PhytoOracle Analytics", layout="wide")
+    # st.set_page_config(page_title="PhytoOracle Analytics", layout="wide")
     st.title("PhytoOracle Analytics")
     
     # Render the sidebar filters and retrieve filter values
@@ -42,9 +43,11 @@ def app():
                 get_comparison_vis(client, INDEX_NAME, query)
             with col4:
                 visualize_parameters(client, INDEX_NAME, query, get_all_columns)
+            compare_axis(client, INDEX_NAME, query, get_all_columns)
     except Exception as e:
         st.warning("Either the data is not available or there was an error processing the data.")
         st.write(e)
 
 if __name__ == "__main__":
+    st.set_page_config(page_title="PhytoOracle Analytics", layout="wide")
     app()
