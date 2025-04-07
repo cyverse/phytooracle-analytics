@@ -34,3 +34,16 @@ By integrating visualization dashboards and advanced searching and indexing capa
     ```
     streamlit run app/vis.py
     ```
+
+## DOCKER SETUP
+
+- The entire app can be set up using the `Dockerfile` provided. In order to build the application, you can use the following command
+    ```
+    docker build -t phytooracle .
+    ```
+- To run the application, you can use the following command
+    ```
+    docker run -p 8501:8501 phytooracle
+    ```
+- The OpenSearch server is already a  part of the docker image, and is set up automatically when the container is run. If you want to access the OpenSearch server separately, ensure that you expose the port `9200` when running the container. You can do this by adding `-p 9200:9200` to the `docker run` command. The OpenSearch server will be accessible at `http://localhost:9200`.
+
