@@ -89,8 +89,15 @@ def get_vis(client, index_name, query):
                 'count': instrument['doc_count']
             })
     st.subheader("Record Counts by Scan Date")
+    graph_type = st.selectbox('Select the graph type', ['Bar', 'Line', 'Scatter'], key="graph_type_scan_date")
     df = pd.DataFrame(data)
-    fig = px.line(df, x='scan_date', y='count', color='instrument')
+    if graph_type == 'Line':
+        fig = px.line(df, x='scan_date', y='count', color='instrument', line_shape='linear')
+    elif graph_type == 'Bar':
+        fig = px.bar(df, x='scan_date', y='count', color='instrument')
+    else:
+        fig = px.scatter(df, x='scan_date', y='count', color='instrument')
+
     st.plotly_chart(fig)
 
 def get_comparison_vis(client, index_name, query):
@@ -98,14 +105,14 @@ def get_comparison_vis(client, index_name, query):
     Compare scan data across selected sensors and seasons.
     """
     st.subheader("Compare scan data across selected sensors and seasons")
-    sensors = st.multiselect('Select the sensors to visualize', ['flirIrCamera', 'scanner3DTop', 'drone', 'stereoTop'])
+    sensors = st.multiselect('Select the sensors to visualize', ['flirIrCamera', 'scanner3DTop', 'drone', 'stereoTop'], default=['flirIrCamera'])
     years = [2022, 2021, 2020, 2019, 2018]
     # Override years if provided in the query
     for f in query['query']['bool']['must']:
         if 'terms' in f and 'year' in f['terms']:
             years = f['terms']['year']
 
-    seasons = st.multiselect('Select the seasons to compare', years)
+    seasons = st.multiselect('Select the seasons to compare', years, default = [2020, 2022])
     graph_type = st.selectbox('Select the graph type', ['Line', 'Bar', 'Scatter'])
 
     query['aggs'] = {

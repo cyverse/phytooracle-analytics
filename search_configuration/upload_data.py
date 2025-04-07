@@ -119,8 +119,12 @@ for data_path in paths:
     try:
         response = client.index(index=index_name, body=data[0])
         success, failed = helpers.bulk(client, actions)
-        print(f"Successfully indexed {success} documents. with {data_path}")
-        print(f"Failed to index {failed} documents.")
+        print(f"Successfully indexed {success} documents in {data_path}")
+        if failed is None or len(failed) > 0:
+            print(f"Failed to index {failed} documents in {data_path}.")
+        else:
+            print(f"All documents in {data_path} indexed successfully.")
+
     except Exception as e:
         print(f"An error occurred while indexing the data: {e}")
         # Print the error in detail

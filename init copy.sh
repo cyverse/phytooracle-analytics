@@ -3,9 +3,11 @@
 
 CONFIG_FILE="/app/config.json"
 LOG_FILE="/app/progress.log"
-PASSWORD_FILE="/app/secrets/opensearch_password"
+
+
 
 # If the configuration file does not exist, launch the configuration UI.
+
 if [ ! -f "$CONFIG_FILE" ]; then
     echo "Configuration file not found. Launching configuration UI..."
     # Start the Streamlit params app on CPU core 1.
@@ -28,13 +30,6 @@ IRODS_USER=$(python3 -c "import json; print(json.load(open('$CONFIG_FILE'))['IRO
 IRODS_PASSWORD=$(python3 -c "import json; print(json.load(open('$CONFIG_FILE'))['IRODS_PASSWORD'])")
 ELASTIC_PASSWORD=$(python3 -c "import json; print(json.load(open('$CONFIG_FILE'))['ELASTIC_PASSWORD'])")
 UPDATE_DATA=$(python3 -c "import json; print(json.load(open('$CONFIG_FILE'))['UPDATE_DATA'])")
-
-# If ELASTIC_PASSWORD is empty, use the pre-generated password
-if [ -z "$ELASTIC_PASSWORD" ] && [ -f "$PASSWORD_FILE" ]; then
-    ELASTIC_PASSWORD=$(cat "$PASSWORD_FILE")
-    # Update the config file with the password
-    python3 -c "import json; config = json.load(open('$CONFIG_FILE')); config['ELASTIC_PASSWORD'] = '$ELASTIC_PASSWORD'; json.dump(config, open('$CONFIG_FILE', 'w'))"
-fi
 
 # Create .env file using the configuration values.
 echo "Creating .env file..."
@@ -77,7 +72,7 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-# Check if the user can access `/iplant/home/shared/phytooracle` before proceeding
+# Check if the user can access `/iplant/home/shared/phytooracle` before proceeding - only proceed if the user has access.
 echo "Checking iRODS access..."
 if ! ils /iplant/home/shared/phytooracle > /dev/null 2>&1; then
     export ERROR="Unable to access /iplant/home/shared/phytooracle. Please check your iRODS credentials or permissions."
@@ -99,6 +94,8 @@ if ! ils /iplant/home/shared/phytooracle > /dev/null 2>&1; then
     exit 1
 fi
 
+
+
 # Function to wait for OpenSearch.
 wait_for_opensearch() {
     echo "Waiting for OpenSearch..."
@@ -107,19 +104,6 @@ wait_for_opensearch() {
     done
     echo "OpenSearch is ready!"
 }
-
-
-# Make sure no OpenSearch instances are running.
-echo "Ensuring no existing OpenSearch instances are running..."
-pkill -f opensearch || true
-
-# Remove any existing OpenSearch lock files.
-echo "Cleaning up any existing OpenSearch lock files..."
-find /app/opensearch-2.17.0/data -name "*.lock" -type f -delete
-
-# Set correct permissions on OpenSearch data directory.
-echo "Setting correct permissions on OpenSearch data directory..."
-chown -R opensearch:opensearch /app/opensearch-2.17.0/data/
 
 # Start OpenSearch as the opensearch user in the background.
 echo "Starting OpenSearch..."
@@ -146,13 +130,23 @@ if [ "${UPDATE_DATA,,}" == "true" ]; then
     
     echo "Data preparation complete!"
     
-    # Update the OpenSearch index with new data
-    echo "Updating OpenSearch index..."
-    python3 search_configuration/upload_data.py
-    echo "Data update complete!"
 fi
 
+echo "Uploading data to OpenSearch..."
+python3 search_configuration/upload_data.py
+
+echo "Data upload complete!"
 echo "term_loop"
+
+
+# # Just before starting the main app, shut down the params app if it is still running.
+# if ps -p $STREAMLIT_PID > /dev/null 2>&1; then
+#     echo "Closing configuration UI..."
+#     kill $STREAMLIT_PID
+# fi
+
+# echo "Starting main frontend app..."
+# streamlit run app/main.py --server.address 0.0.0.0 --server.enableCORS false --server.enableXsrfProtection false
 
 # Wait for all background processes to finish.
 wait
