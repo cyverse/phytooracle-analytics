@@ -510,6 +510,8 @@ def visualize_parameters(client, index_name, query, get_all_columns_func):
     
     st.plotly_chart(fig)
 
+
+
 def compare_axis(client, index_name, query, get_all_columns_func):
     """
     Compare the values of multiple columns.
@@ -535,6 +537,32 @@ def compare_axis(client, index_name, query, get_all_columns_func):
 
     # Ask user to select the visualization type - scatterplot matrix or parallel coordinates plot
     plot_type = st.selectbox('Select the visualization type', ['Scatterplot Matrix', 'Parallel Coordinates Plot'])
+
+    # Add colorscale selection options
+    with st.expander("Visualization Options", expanded=True):
+        # Define colorscale options by category
+        sequential_scales = ['Viridis', 'Plasma', 'Inferno', 'Magma', 'Cividis', 'Blues', 'Greens', 'Reds', 'YlOrBr']
+        diverging_scales = ['RdBu', 'RdYlBu', 'RdYlGn', 'Spectral', 'BrBG', 'PiYG']
+        qualitative_scales = ['Set1', 'Set2', 'Set3', 'Pastel1', 'Pastel2', 'Dark2']
+        
+        # Combined colorscale list with categories
+        colorscale_options = []
+        colorscale_options.extend([f"Sequential: {scale}" for scale in sequential_scales])
+        colorscale_options.extend([f"Diverging: {scale}" for scale in diverging_scales])
+        colorscale_options.extend([f"Qualitative: {scale}" for scale in qualitative_scales])
+        
+        # Default selection based on plot type
+        default_colorscale = "Qualitative: Set1" if plot_type == "Scatterplot Matrix" else "Sequential: Viridis"
+        
+        # Let user select colorscale
+        selected_colorscale = st.selectbox(
+            'Select color palette', 
+            colorscale_options,
+            index=colorscale_options.index(default_colorscale)
+        )
+        
+        # Extract actual colorscale name from selection
+        colorscale_type, colorscale_name = selected_colorscale.split(": ")
 
     # Ensure the query uses the selected columns.
     query['aggs'] = {
@@ -571,23 +599,41 @@ def compare_axis(client, index_name, query, get_all_columns_func):
     df['year'] = df['year'].astype(int)
     # st.write(df)
 
+    # Get the correct colorscale based on selection
+    if colorscale_type == "Sequential":
+        color_scale = getattr(px.colors.sequential, colorscale_name)
+    elif colorscale_type == "Diverging":
+        color_scale = getattr(px.colors.diverging, colorscale_name)
+    else:  # Qualitative
+        color_scale = getattr(px.colors.qualitative, colorscale_name)
+
     if plot_type == 'Scatterplot Matrix':
-        # make a scale mapping the year to a color
-        color_scale = px.colors.qualitative.Set1
-        color_map = {str(year): color for year, color in zip(df['year'].unique(), color_scale)}
-        
-        # Build a line plot matrix comparing the columns (year can just be a color legend)
-        fig = px.scatter_matrix(df, dimensions=selected_columns, color='year', color_discrete_map=color_map)
+        # For qualitative scales, map each year to a color
+        if colorscale_type == "Qualitative":
+            color_map = {str(year): color for year, color in zip(df['year'].unique(), color_scale)}
+            
+            # Build a scatter matrix comparing the columns
+            fig = px.scatter_matrix(df, dimensions=selected_columns, color='year', color_discrete_map=color_map)
+            
+            # Ensure the color legend is discrete
+            fig.update_layout(coloraxis_colorbar=dict(
+                title="Year",
+                tickvals=list(color_map.keys()),
+                ticktext=list(color_map.keys())
+            ))
+        else:
+            # For sequential and diverging scales, use continuous color mapping
+            fig = px.scatter_matrix(
+                df, 
+                dimensions=selected_columns, 
+                color='year',
+                color_continuous_scale=color_scale
+            )
         
         # make the figure a bit larger, proportional to the number of columns
         fig.update_layout(width=400 + 100 * len(selected_columns), height=400 + 100 * len(selected_columns))
-        # Ensure the color legend is discrete
+        # Adjust marker size
         fig.update_traces(marker=dict(size=5))
-        fig.update_layout(coloraxis_colorbar=dict(
-            title="Year",
-            tickvals=list(color_map.keys()),
-            ticktext=list(color_map.keys())
-        ))
 
         st.plotly_chart(fig, config={'displayModeBar': False})
         st.markdown(
@@ -602,7 +648,7 @@ def compare_axis(client, index_name, query, get_all_columns_func):
             unsafe_allow_html=True
         )
 
-    else:
+    else:  # Parallel Coordinates Plot
         # For parallel coordinates, include year as one of the dimensions
         dimensions = ['year'] + selected_columns
         
@@ -620,7 +666,6 @@ def compare_axis(client, index_name, query, get_all_columns_func):
         st.markdown("**Click to color by:**")
         cols = st.columns(len(dimensions))
         
- 
         # Create buttons for each dimension to allow switching the color dimension
         for i, dim in enumerate(dimensions):
             if cols[i].button(dim, key=f"color_by_{dim}"):
@@ -632,26 +677,31 @@ def compare_axis(client, index_name, query, get_all_columns_func):
         if color_dim not in dimensions:
             color_dim = dimensions[0]
 
-        # Build a parallel coordinates plot including year as the first axis
-        # and color according to the selected dimension
+        # Use the selected colorscale for parallel coordinates
+        # For 'year' dimension, prefer qualitative scales if the selected scale is sequential/diverging
+        selected_color_scale = color_scale
+        if color_dim == 'year' and colorscale_type != "Qualitative":
+            # Default to a qualitative scale for categorical year
+            selected_color_scale = px.colors.qualitative.Set1
+            st.info(f"Note: Using 'Set1' qualitative palette for categorical 'year' dimension instead of {colorscale_name}")
+
+        # Build a parallel coordinates plot with the selected colorscale
         fig = px.parallel_coordinates(
             df, 
             dimensions=dimensions,
             color=color_dim,
-            color_continuous_scale=px.colors.sequential.Viridis if color_dim != 'year' else px.colors.qualitative.Set1
+            color_continuous_scale=selected_color_scale if color_dim != 'year' or colorscale_type == "Qualitative" else selected_color_scale
         )
         
-        # Update layout to provide better interaction and increase margin between title and plot
+        # Update layout
         fig.update_layout(
             width=800, 
             height=400,
-            # Add tooltips for better UX
             hovermode='closest',
-            # Add note about interaction in the title and increase top margin
-            margin=dict(t=80, b=20, l=50, r=50),  # Increased top margin to prevent overlap
+            margin=dict(t=80, b=20, l=50, r=50),
             title={
                 'text': f'Parallel Coordinates Plot (Colored by {color_dim})',
-                'y':0.98,  # Moved title position up
+                'y':0.98,
                 'x':0.5,
                 'xanchor': 'center',
                 'yanchor': 'top'
@@ -666,6 +716,7 @@ def compare_axis(client, index_name, query, get_all_columns_func):
         **Interactions with Parallel Coordinates Plot:**
         - **Drag the axis labels** to reorder the axes.
         - **Click on the buttons below the plot** to color by different dimensions.
+        - **Use the colorscale selection** to change the color palette.
         """)
         
         st.markdown(

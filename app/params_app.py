@@ -133,9 +133,16 @@ if os.getenv("DEPLOYMENT_STATUS") != "complete":
             # if the last line of the log file (after removing whitespace) is term_loop, then the deployment is complete
             if lf_tail.split()[-1].strip() == "term_loop":
                 os.putenv("DEPLOYMENT_STATUS", "complete")
-                st.success("Deployment complete! You can now access the app.")
-                # refresh the page
-                st.rerun()
+                os.environ["DEPLOYMENT_STATUS"] = "complete"
+                st.success("Deployment complete! You can now access the app. If you encounter an error message, please refresh the page.")
+                # add a timer before the app loads, with a countdown
+                st.balloons()
+                info = st.empty()
+                for i in range(30, 0, -1):
+                    info.info(f"Loading app in {i} seconds...")
+                    time.sleep(1)
+                info.empty()
+                st.success("App loaded successfully!")
                 break
 
             # Auto-refresh the app every 2 seconds to simulate "tail -f".
@@ -144,6 +151,7 @@ if os.getenv("DEPLOYMENT_STATUS") != "complete":
 
 # If the deployment is not in progress, continue with the app
 from main import app
+
 
 with placeholder.container():
     app()
