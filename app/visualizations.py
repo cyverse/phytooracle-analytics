@@ -635,7 +635,7 @@ def compare_axis(client, index_name, query, get_all_columns_func):
         # Adjust marker size
         fig.update_traces(marker=dict(size=5))
 
-        st.plotly_chart(fig, config={'displayModeBar': False})
+        st.plotly_chart(fig, config={'displayModeBar': True})
         st.markdown(
             """
             <style>
